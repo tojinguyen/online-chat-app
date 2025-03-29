@@ -1,6 +1,8 @@
+"use client";
+
+import AuthForm from "@/app/components/auth/AuthForm";
+import { useAuth } from "@/contexts/auth/AuthContext";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../../contexts/auth/AuthContext";
-import AuthForm from "../components/auth/AuthForm";
 
 export default function RegisterPage() {
   const { login } = useAuth();

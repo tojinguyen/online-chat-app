@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 
 export default function ForgotPasswordPage() {
@@ -11,7 +13,9 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex justify-center items-center h-screen bg-gray-100">
       <div className="bg-white p-8 rounded-xl shadow-lg w-96">
-        <h2 className="text-2xl font-bold text-center mb-4">Forgot Password</h2>
+        <h2 className="text-2xl font-bold text-center mb-4 text-gray-900">
+          Forgot Password
+        </h2>
         <input
           type="email"
           placeholder="Enter your email"
