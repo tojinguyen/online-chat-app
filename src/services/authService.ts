@@ -13,6 +13,12 @@ export interface PasswordResetRequestDto {
   email: string;
 }
 
+export interface RegisterRequestDto {
+  email: string;
+  password: string;
+  name: string;
+}
+
 // Base API URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -36,6 +42,26 @@ export const loginUser = async (
   }
 
   return response.json();
+};
+
+/**
+ * Register a new user
+ */
+export const registerUser = async (data: RegisterRequestDto): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Registration failed");
+  }
+
+  return;
 };
 
 /**

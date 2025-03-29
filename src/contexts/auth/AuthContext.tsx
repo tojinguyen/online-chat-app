@@ -1,6 +1,10 @@
 "use client";
 
-import { LoginResponseDto, loginUser } from "@/services/authService";
+import {
+  LoginResponseDto,
+  loginUser,
+  registerUser,
+} from "@/services/authService";
 import {
   createContext,
   ReactNode,
@@ -12,6 +16,7 @@ import {
 interface AuthContextType {
   user: string | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -60,6 +65,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const register = async (email: string, password: string, name: string) => {
+    try {
+      // Call the registerUser API function
+      const registerResponse = await registerUser({ email, password, name });
+
+      // After successful registration, log the user in
+      try {
+        await login(email, password);
+      } catch (loginError) {
+        console.error("Auto login after registration failed:", loginError);
+        // Registration was successful, but auto-login failed
+        // We can either throw an error or handle it differently
+        throw new Error(
+          "Registration successful but login failed. Please try logging in manually."
+        );
+      }
+
+      return registerResponse;
+    } catch (error) {
+      console.error("Registration failed:", error);
+      throw error; // Re-throw for handling in UI components
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
@@ -70,7 +99,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated }}>
+    <AuthContext.Provider
+      value={{ user, login, register, logout, isAuthenticated }}
+    >
       {children}
     </AuthContext.Provider>
   );
