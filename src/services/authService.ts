@@ -14,8 +14,7 @@ export interface PasswordResetRequestDto {
 }
 
 // Base API URL
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 /**
  * Login user with email and password
