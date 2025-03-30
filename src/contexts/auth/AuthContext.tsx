@@ -65,10 +65,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const register = async (
+    email: string,
+    password: string,
+    fullName: string
+  ) => {
     try {
       // Call the registerUser API function
-      const registerResponse = await registerUser({ email, password, name });
+      const registerResponse = await registerUser({
+        email,
+        password,
+        fullName,
+      });
 
       // After successful registration, log the user in
       try {

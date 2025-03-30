@@ -7,6 +7,10 @@ export interface LoginRequestDto {
 export interface LoginResponseDto {
   accessToken: string;
   refreshToken: string;
+  userId: string;
+  email: string;
+  fullName: string;
+  role: string;
 }
 
 export interface PasswordResetRequestDto {
@@ -16,7 +20,14 @@ export interface PasswordResetRequestDto {
 export interface RegisterRequestDto {
   email: string;
   password: string;
-  name: string;
+  fullName: string;
+}
+
+export interface VerifyEmailRegisterRequestDto {
+  email: string;
+  password: string;
+  fullName: string;
+  code: string;
 }
 
 // Base API URL
@@ -62,6 +73,28 @@ export const registerUser = async (data: RegisterRequestDto): Promise<void> => {
   }
 
   return;
+};
+
+/**
+ * Verify email with code during registration
+ */
+export const verifyEmailRegister = async (
+  data: VerifyEmailRegisterRequestDto
+): Promise<LoginResponseDto> => {
+  const response = await fetch(`${API_BASE_URL}/auth/verify-register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "Email verification failed");
+  }
+
+  return response.json();
 };
 
 /**
