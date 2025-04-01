@@ -59,8 +59,9 @@ export const loginUser = async (
  * Register a new user
  */
 export const registerUser = async (data: RegisterRequestDto): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+  const response = await fetch(`${API_BASE_URL}/auth/send-register-code`, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
@@ -81,7 +82,7 @@ export const registerUser = async (data: RegisterRequestDto): Promise<void> => {
 export const verifyEmailRegister = async (
   data: VerifyEmailRegisterRequestDto
 ): Promise<LoginResponseDto> => {
-  const response = await fetch(`${API_BASE_URL}/auth/verify-register`, {
+  const response = await fetch(`${API_BASE_URL}/auth/verify-register-code`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
