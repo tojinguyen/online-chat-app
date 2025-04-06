@@ -16,6 +16,7 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState("chats"); // 'chats' or 'friends'
   const [searching, setSearching] = useState(false);
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
+  const [messageText, setMessageText] = useState(""); // Add state for message input
 
   // Sample data (to be replaced with actual API calls)
   const conversations = [
@@ -99,6 +100,14 @@ export default function HomePage() {
   const handleLogout = () => {
     logout();
     router.push("/auth");
+  };
+
+  const handleSendMessage = () => {
+    if (messageText.trim()) {
+      // Here you would typically send the message to your backend
+      console.log("Sending message:", messageText);
+      setMessageText(""); // Clear input after sending
+    }
   };
 
   if (!user) {
@@ -326,9 +335,14 @@ export default function HomePage() {
                 <input
                   type="text"
                   placeholder="Type a message..."
-                  className="flex-1 border border-gray-300 rounded-l-md p-2 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="flex-1 border border-gray-300 rounded-md p-2 h-10 mr-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900" // Added text-gray-900 for better visibility
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
                 />
-                <button className="bg-indigo-500 text-white px-4 py-2 rounded-r-md hover:bg-indigo-600">
+                <button
+                  className="bg-indigo-500 text-white px-4 h-10 rounded-md hover:bg-indigo-600 flex items-center justify-center"
+                  onClick={handleSendMessage}
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5"
