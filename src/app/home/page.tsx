@@ -195,7 +195,7 @@ export default function HomePage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-gray-500 text-sm text-center">
+                  <p className="text-gray-800 text-sm text-center">
                     No users found
                   </p>
                 )}
@@ -246,9 +246,9 @@ export default function HomePage() {
                       <span className="font-medium text-gray-900">
                         {chat.name}
                       </span>
-                      <span className="text-xs text-gray-500">{chat.time}</span>
+                      <span className="text-xs text-gray-700">{chat.time}</span>
                     </div>
-                    <p className="text-sm text-gray-500 truncate">
+                    <p className="text-sm text-gray-800 truncate">
                       {chat.lastMessage}
                     </p>
                   </div>
@@ -281,7 +281,7 @@ export default function HomePage() {
                         }`}
                       ></span>
                     </div>
-                    <p className="text-sm text-gray-500">{friend.status}</p>
+                    <p className="text-sm text-gray-800">{friend.status}</p>
                   </div>
                 </div>
               ))}
@@ -309,7 +309,7 @@ export default function HomePage() {
                     )?.name
                   }
                 </h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-800">
                   {friends.find((f) => f.id === selectedChat)?.status ===
                   "online"
                     ? "Online"
@@ -330,13 +330,13 @@ export default function HomePage() {
                     className={`max-w-xs md:max-w-md p-3 rounded-lg ${
                       message.isMine
                         ? "bg-indigo-500 text-white rounded-br-none"
-                        : "bg-white rounded-bl-none shadow"
+                        : "bg-white text-gray-900 rounded-bl-none shadow-md"
                     }`}
                   >
-                    <p>{message.content}</p>
+                    <p className="font-medium">{message.content}</p>
                     <span
                       className={`text-xs block mt-1 ${
-                        message.isMine ? "text-indigo-100" : "text-gray-500"
+                        message.isMine ? "text-white" : "text-gray-700"
                       }`}
                     >
                       {message.time}
@@ -392,7 +392,7 @@ export default function HomePage() {
               <h3 className="mt-2 text-lg font-medium text-gray-900">
                 Select a chat to start messaging
               </h3>
-              <p className="mt-1 text-gray-500">
+              <p className="mt-1 text-gray-800">
                 Choose a conversation from the sidebar
               </p>
             </div>
