@@ -4,27 +4,29 @@ import { useAuth } from "@/contexts/auth/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export default function HomePage() {
-  const { user } = useAuth();
+export default function SplashScreen() {
+  const { user, isLoading } = useAuth();
   const router = useRouter();
 
-  // Sử dụng useEffect để redirect nếu chưa đăng nhập
   useEffect(() => {
-    if (!user) {
-      router.push("/auth"); // Điều hướng đến trang đăng nhập nếu chưa đăng nhập
+    // If auth state is determined (not loading)
+    if (!isLoading) {
+      if (user) {
+        // User is authenticated, redirect to home
+        router.push("/home");
+      } else {
+        // User is not authenticated, redirect to login
+        router.push("/auth");
+      }
     }
-  }, [user, router]);
+  }, [user, isLoading, router]);
 
-  // Nếu chưa có người dùng, không hiển thị gì trong khi đang chuyển hướng
-  if (!user) {
-    return null;
-  }
-
+  // Show a loading screen while checking authentication
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-xl shadow-lg text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome, {user}!</h1>
-        <p className="text-lg">You are now logged in.</p>
+    <div className="flex h-screen items-center justify-center bg-indigo-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-500 mx-auto"></div>
+        <h2 className="mt-4 text-xl font-medium text-indigo-900">Loading...</h2>
       </div>
     </div>
   );

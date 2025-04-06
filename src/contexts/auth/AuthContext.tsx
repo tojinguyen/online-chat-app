@@ -15,6 +15,7 @@ import {
 
 interface AuthContextType {
   user: string | null;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
@@ -38,6 +39,7 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Load token từ localStorage khi trang được mở
   useEffect(() => {
@@ -46,6 +48,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(storedUser);
       setIsAuthenticated(true);
     }
+    setIsLoading(false); // Set loading to false after checking authentication
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -108,7 +111,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, register, logout, isAuthenticated }}
+      value={{ user, isLoading, login, register, logout, isAuthenticated }}
     >
       {children}
     </AuthContext.Provider>
