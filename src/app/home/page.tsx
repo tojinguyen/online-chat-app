@@ -1,5 +1,6 @@
 "use client";
 
+import MessageList from "@/components/messages/MessageList";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -318,33 +319,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`mb-4 flex ${
-                    message.isMine ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`max-w-xs md:max-w-md p-3 rounded-lg ${
-                      message.isMine
-                        ? "bg-indigo-500 text-white rounded-br-none"
-                        : "bg-white text-gray-900 rounded-bl-none shadow-md"
-                    }`}
-                  >
-                    <p className="font-medium">{message.content}</p>
-                    <span
-                      className={`text-xs block mt-1 ${
-                        message.isMine ? "text-white" : "text-gray-700"
-                      }`}
-                    >
-                      {message.time}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <MessageList messages={messages} />
 
             <div className="bg-white border-t border-gray-200 p-4">
               <div className="flex items-center">
