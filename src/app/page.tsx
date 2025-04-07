@@ -5,21 +5,48 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function SplashScreen() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, verifyToken, refreshAccessToken } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // If auth state is determined (not loading)
-    if (!isLoading) {
-      if (user) {
-        // User is authenticated, redirect to home
-        router.push("/home");
-      } else {
-        // User is not authenticated, redirect to login
-        router.push("/auth");
+    const checkAuthentication = async () => {
+      const accessToken = localStorage.getItem("accessToken");
+
+      if (accessToken) {
+        const isValidToken = await verifyToken(accessToken);
+
+        if (isValidToken) {
+          router.push("/home");
+        } else {
+          const refreshToken = localStorage.getItem("refreshToken");
+
+          if (refreshToken) {
+            const refreshSuccess = await refreshAccessToken(refreshToken);
+
+            if (refreshSuccess) {
+              router.push("/home");
+            } else {
+              router.push("/auth");
+            }
+          } else {
+            router.push("/auth");
+          }
+        }
+      } else if (!isLoading) {
+        if (user) {
+          router.push("/home");
+        } else {
+          router.push("/auth");
+        }
       }
+
+      // Removed unused setIsVerifying call
+    };
+
+    if (!isLoading) {
+      checkAuthentication();
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, verifyToken, refreshAccessToken]);
 
   // Show a loading screen while checking authentication
   return (

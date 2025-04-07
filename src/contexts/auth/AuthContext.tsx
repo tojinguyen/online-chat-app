@@ -3,7 +3,9 @@
 import {
   LoginResponseDto,
   loginUser,
+  refreshToken as refreshUserToken,
   registerUser,
+  verifyUserToken,
 } from "@/services/authService";
 import {
   createContext,
@@ -20,6 +22,8 @@ interface AuthContextType {
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  verifyToken: (token: string) => Promise<boolean>;
+  refreshAccessToken: (refreshToken: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,7 +79,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   ) => {
     try {
       // Call the registerUser API function
-      const registerResponse = await registerUser({
+      await registerUser({
         email,
         password,
         fullName,
@@ -93,7 +97,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         );
       }
 
-      return registerResponse;
+      // Registration successful, no need to return a value
+      return;
     } catch (error) {
       console.error("Registration failed:", error);
       throw error; // Re-throw for handling in UI components
@@ -109,9 +114,63 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setIsAuthenticated(false);
   };
 
+  const verifyToken = async (token: string): Promise<boolean> => {
+    try {
+      const isValid = await verifyUserToken(token);
+      if (isValid) {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          setUser(storedUser);
+          setIsAuthenticated(true);
+        }
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Token verification failed:", error);
+      return false;
+    }
+  };
+
+  const refreshAccessToken = async (
+    refreshTokenStr: string
+  ): Promise<boolean> => {
+    try {
+      const response = await refreshUserToken(refreshTokenStr);
+      if (response && response.accessToken) {
+        // Save new tokens
+        localStorage.setItem("accessToken", response.accessToken);
+        if (response.refreshToken) {
+          localStorage.setItem("refreshToken", response.refreshToken);
+        }
+
+        // If user info is in response, update it
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          setUser(storedUser);
+          setIsAuthenticated(true);
+        }
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+      return false;
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, login, register, logout, isAuthenticated }}
+      value={{
+        user,
+        isLoading,
+        login,
+        register,
+        logout,
+        isAuthenticated,
+        verifyToken,
+        refreshAccessToken,
+      }}
     >
       {children}
     </AuthContext.Provider>

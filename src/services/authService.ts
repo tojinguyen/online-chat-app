@@ -1,3 +1,5 @@
+import axios from "axios";
+
 // Auth related DTOs
 export interface LoginRequestDto {
   email: string;
@@ -7,10 +9,11 @@ export interface LoginRequestDto {
 export interface LoginResponseDto {
   accessToken: string;
   refreshToken: string;
-  userId: string;
-  email: string;
-  fullName: string;
-  role: string;
+  user: {
+    id: string;
+    email: string;
+    fullName: string;
+  };
 }
 
 export interface PasswordResetRequestDto {
@@ -30,8 +33,13 @@ export interface VerifyEmailRegisterRequestDto {
   code: string;
 }
 
+export interface RefreshTokenResponseDto {
+  accessToken: string;
+  refreshToken?: string;
+}
+
 // Base API URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
 /**
  * Login user with email and password
@@ -39,41 +47,31 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 export const loginUser = async (
   data: LoginRequestDto
 ): Promise<LoginResponseDto> => {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || "Login failed");
+  try {
+    const response = await axios.post<LoginResponseDto>(
+      `${API_URL}/auth/login`,
+      data
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
   }
-
-  return response.json();
 };
 
 /**
  * Register a new user
  */
-export const registerUser = async (data: RegisterRequestDto): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/auth/send-register-code`, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || "Registration failed");
+export const registerUser = async (
+  data: RegisterRequestDto
+): Promise<{ message: string }> => {
+  try {
+    const response = await axios.post(`${API_URL}/auth/register`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Registration error:", error);
+    throw error;
   }
-
-  return;
 };
 
 /**
@@ -82,7 +80,7 @@ export const registerUser = async (data: RegisterRequestDto): Promise<void> => {
 export const verifyEmailRegister = async (
   data: VerifyEmailRegisterRequestDto
 ): Promise<LoginResponseDto> => {
-  const response = await fetch(`${API_BASE_URL}/auth/verify-register-code`, {
+  const response = await fetch(`${API_URL}/auth/verify-register-code`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -104,7 +102,7 @@ export const verifyEmailRegister = async (
 export const sendPasswordResetEmail = async (
   data: PasswordResetRequestDto
 ): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+  const response = await fetch(`${API_URL}/auth/forgot-password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -127,7 +125,7 @@ export const resetPassword = async (
   token: string,
   password: string
 ): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+  const response = await fetch(`${API_URL}/auth/reset-password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -141,4 +139,43 @@ export const resetPassword = async (
   }
 
   return;
+};
+
+/**
+ * Verify token
+ */
+export const verifyUserToken = async (token: string): Promise<boolean> => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/auth/verify-token`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.status === 200;
+  } catch (error) {
+    console.error("Token verification error:", error);
+    return false;
+  }
+};
+
+/**
+ * Refresh token
+ */
+export const refreshToken = async (
+  refreshToken: string
+): Promise<RefreshTokenResponseDto> => {
+  try {
+    const response = await axios.post<RefreshTokenResponseDto>(
+      `${API_URL}/auth/refresh-token`,
+      { refreshToken }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Token refresh error:", error);
+    throw error;
+  }
 };
