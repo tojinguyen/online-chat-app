@@ -39,8 +39,6 @@ export default function SplashScreen() {
           router.push("/auth");
         }
       }
-
-      // Removed unused setIsVerifying call
     };
 
     if (!isLoading) {

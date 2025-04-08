@@ -39,7 +39,8 @@ export interface RefreshTokenResponseDto {
 }
 
 // Base API URL
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
 
 /**
  * Login user with email and password
