@@ -1,28 +1,27 @@
 "use client";
 
+import { AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function SplashScreen() {
-  const { user, isLoading, verifyToken, refreshAccessToken } = useAuth();
+  const { isLoading, verifyToken, refreshAccessToken } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     const checkAuthentication = async () => {
-      const accessToken = localStorage.getItem("accessToken");
-
+      const accessToken = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
       if (accessToken) {
         const isValidToken = await verifyToken(accessToken);
-
         if (isValidToken) {
           router.push("/home");
         } else {
-          const refreshToken = localStorage.getItem("refreshToken");
-
+          const refreshToken = localStorage.getItem(
+            AUTH_STORAGE_KEYS.REFRESH_TOKEN
+          );
           if (refreshToken) {
             const refreshSuccess = await refreshAccessToken(refreshToken);
-
             if (refreshSuccess) {
               router.push("/home");
             } else {
@@ -32,26 +31,25 @@ export default function SplashScreen() {
             router.push("/auth");
           }
         }
-      } else if (!isLoading) {
-        if (user) {
-          router.push("/home");
-        } else {
-          router.push("/auth");
-        }
+      } else {
+        router.push("/auth");
       }
     };
 
     if (!isLoading) {
       checkAuthentication();
     }
-  }, [user, isLoading, router, verifyToken, refreshAccessToken]);
+  }, [isLoading, router, refreshAccessToken, verifyToken]);
 
-  // Show a loading screen while checking authentication
   return (
-    <div className="flex h-screen items-center justify-center bg-indigo-50">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-500 mx-auto"></div>
-        <h2 className="mt-4 text-xl font-medium text-indigo-900">Loading...</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="p-6 max-w-sm w-full bg-white shadow-md rounded-md">
+        <h2 className="text-2xl font-bold text-center text-gray-700 mb-5">
+          Loading...
+        </h2>
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        </div>
       </div>
     </div>
   );

@@ -1,10 +1,12 @@
 "use client";
 
+import { AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import {
   LoginResponseDto,
   loginUser,
   refreshToken as refreshUserToken,
   registerUser,
+  VerifyTokenResponse,
   verifyUserToken,
 } from "@/services/authService";
 import {
@@ -15,8 +17,16 @@ import {
   useState,
 } from "react";
 
+interface UserDetails {
+  userId: string;
+  email: string;
+  fullName: string;
+  role: string;
+}
+
 interface AuthContextType {
   user: string | null;
+  userDetails: UserDetails | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
@@ -42,12 +52,13 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<string | null>(null);
+  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Load token từ localStorage khi trang được mở
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
     if (storedUser) {
       setUser(storedUser);
       setIsAuthenticated(true);
@@ -60,9 +71,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const data: LoginResponseDto = await loginUser({ email, password });
 
       // Lưu token vào localStorage
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-      localStorage.setItem("user", email);
+      localStorage.setItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN, data.accessToken);
+      localStorage.setItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken);
+      localStorage.setItem(AUTH_STORAGE_KEYS.USER, email);
 
       setUser(email);
       setIsAuthenticated(true);
@@ -106,9 +117,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("user");
+    localStorage.removeItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+    localStorage.removeItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(AUTH_STORAGE_KEYS.USER);
 
     setUser(null);
     setIsAuthenticated(false);
@@ -116,13 +127,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const verifyToken = async (token: string): Promise<boolean> => {
     try {
-      const isValid = await verifyUserToken(token);
-      if (isValid) {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          setUser(storedUser);
-          setIsAuthenticated(true);
-        }
+      const response: VerifyTokenResponse = await verifyUserToken(token);
+
+      if (response.valid) {
+        setUser(response.email);
+        setUserDetails({
+          userId: response.userId,
+          email: response.email,
+          fullName: response.fullName,
+          role: response.role,
+        });
+        setIsAuthenticated(true);
+
+        // Store user details in localStorage
+        localStorage.setItem(AUTH_STORAGE_KEYS.USER, response.email);
+        localStorage.setItem(
+          AUTH_STORAGE_KEYS.USER,
+          JSON.stringify({
+            userId: response.userId,
+            email: response.email,
+            fullName: response.fullName,
+            role: response.role,
+          })
+        );
+
         return true;
       }
       return false;
@@ -139,13 +167,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const response = await refreshUserToken(refreshTokenStr);
       if (response && response.accessToken) {
         // Save new tokens
-        localStorage.setItem("accessToken", response.accessToken);
+        localStorage.setItem(
+          AUTH_STORAGE_KEYS.ACCESS_TOKEN,
+          response.accessToken
+        );
         if (response.refreshToken) {
-          localStorage.setItem("refreshToken", response.refreshToken);
+          localStorage.setItem(
+            AUTH_STORAGE_KEYS.REFRESH_TOKEN,
+            response.refreshToken
+          );
         }
 
         // If user info is in response, update it
-        const storedUser = localStorage.getItem("user");
+        const storedUser = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
         if (storedUser) {
           setUser(storedUser);
           setIsAuthenticated(true);
@@ -163,6 +197,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     <AuthContext.Provider
       value={{
         user,
+        userDetails,
         isLoading,
         login,
         register,

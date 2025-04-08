@@ -38,6 +38,14 @@ export interface RefreshTokenResponseDto {
   refreshToken?: string;
 }
 
+export interface VerifyTokenResponse {
+  valid: boolean;
+  userId: string;
+  email: string;
+  fullName: string;
+  role: string;
+}
+
 // Base API URL
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
@@ -145,21 +153,26 @@ export const resetPassword = async (
 /**
  * Verify token
  */
-export const verifyUserToken = async (token: string): Promise<boolean> => {
+export const verifyUserToken = async (
+  token: string
+): Promise<VerifyTokenResponse> => {
   try {
-    const response = await axios.post(
-      `${API_URL}/auth/verify-token`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    return response.status === 200;
+    const response = await fetch(`${API_URL}/auth/verify-token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Token verification failed");
+    }
+
+    return await response.json();
   } catch (error) {
-    console.error("Token verification error:", error);
-    return false;
+    console.error("Error verifying token:", error);
+    return { valid: false, userId: "", email: "", fullName: "", role: "" };
   }
 };
 
