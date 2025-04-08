@@ -73,7 +73,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Lưu token vào localStorage
       localStorage.setItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN, data.accessToken);
       localStorage.setItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken);
-      localStorage.setItem(AUTH_STORAGE_KEYS.USER, email);
+      localStorage.setItem(
+        AUTH_STORAGE_KEYS.USER,
+        JSON.stringify({
+          userId: data.userId,
+          email: data.email,
+          fullName: data.fullName,
+          role: data.role,
+        })
+      );
+
+      console.log("Login successful:", data);
 
       setUser(email);
       setIsAuthenticated(true);
@@ -127,6 +137,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const verifyToken = async (token: string): Promise<boolean> => {
     try {
+      console.log("Verifying token:", token);
       const response: VerifyTokenResponse = await verifyUserToken(token);
 
       if (response.valid) {

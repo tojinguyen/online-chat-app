@@ -3,53 +3,97 @@
 import { AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function SplashScreen() {
-  const { isLoading, verifyToken, refreshAccessToken } = useAuth();
+  const { verifyToken, refreshAccessToken } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const checkAuthentication = async () => {
-      const accessToken = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
-      if (accessToken) {
-        const isValidToken = await verifyToken(accessToken);
-        if (isValidToken) {
-          router.push("/home");
-        } else {
-          const refreshToken = localStorage.getItem(
+      try {
+        // Only access localStorage in the browser environment
+        let accessToken = null;
+        let refreshTokenStr = null;
+
+        // Check if window is defined (client-side)
+        if (typeof window !== "undefined") {
+          accessToken = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+          refreshTokenStr = localStorage.getItem(
             AUTH_STORAGE_KEYS.REFRESH_TOKEN
           );
-          if (refreshToken) {
-            const refreshSuccess = await refreshAccessToken(refreshToken);
+          console.log("Access Token:", accessToken);
+          console.log("Refresh Token exists:", !!refreshTokenStr);
+        }
+
+        let isValid = false;
+
+        // First try with access token
+        if (accessToken && accessToken !== undefined) {
+          console.log("Verifying access token...");
+          try {
+            isValid = await verifyToken(accessToken);
+            console.log("Access token verification result:", isValid);
+          } catch (err) {
+            console.error("Access token verification failed:", err);
+          }
+        } else {
+          console.log("No access token available");
+        }
+
+        // If access token invalid, try refresh token
+        if (!isValid && refreshTokenStr && refreshTokenStr !== undefined) {
+          console.log("Attempting to refresh token...");
+          try {
+            const refreshSuccess = await refreshAccessToken(refreshTokenStr);
+            console.log("Refresh token result:", refreshSuccess);
+
             if (refreshSuccess) {
-              router.push("/home");
-            } else {
-              router.push("/auth");
+              const newAccessToken = localStorage.getItem(
+                AUTH_STORAGE_KEYS.ACCESS_TOKEN
+              );
+              console.log(
+                "New access token after refresh:",
+                newAccessToken ? "exists" : "undefined"
+              );
+
+              if (newAccessToken) {
+                isValid = await verifyToken(newAccessToken);
+                console.log("New token verification result:", isValid);
+              }
             }
-          } else {
-            router.push("/auth");
+          } catch (refreshErr) {
+            console.error("Refresh token process failed:", refreshErr);
           }
         }
-      } else {
-        router.push("/auth");
+
+        // Navigate based on authentication status
+        console.log("Final authentication status:", isValid);
+        if (isValid) {
+          console.log("Redirecting to home page");
+          router.replace("/home");
+        } else {
+          console.log("Redirecting to auth page");
+          router.replace("/auth");
+        }
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+        router.replace("/auth"); // Changed to /auth to be consistent
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    if (!isLoading) {
-      checkAuthentication();
-    }
-  }, [isLoading, router, refreshAccessToken, verifyToken]);
+    checkAuthentication();
+  }, [verifyToken, refreshAccessToken, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="p-6 max-w-sm w-full bg-white shadow-md rounded-md">
-        <h2 className="text-2xl font-bold text-center text-gray-700 mb-5">
-          Loading...
-        </h2>
-        <div className="flex justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-        </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold mb-4">Online Chat App</h1>
+        {isLoading && <p className="text-lg font-medium mb-2">Loading...</p>}
+        <p className="text-muted-foreground">Starting your experience...</p>
       </div>
     </div>
   );

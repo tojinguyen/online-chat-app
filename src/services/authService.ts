@@ -9,11 +9,10 @@ export interface LoginRequestDto {
 export interface LoginResponseDto {
   accessToken: string;
   refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-    fullName: string;
-  };
+  userId: string;
+  email: string;
+  fullName: string;
+  role: string;
 }
 
 export interface PasswordResetRequestDto {
