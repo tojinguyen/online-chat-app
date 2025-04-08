@@ -1,6 +1,5 @@
 "use client";
 
-import { Spinner } from "@/components/ui/spinner"; // Assuming you have a spinner component
 import { AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useRouter } from "next/navigation";
@@ -63,7 +62,7 @@ export default function SplashScreen() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-background">
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-4">Online Chat App</h1>
-        {isLoading && <Spinner size="lg" />}
+        {isLoading && <p className="text-lg font-medium mb-2">Loading...</p>}
         <p className="text-muted-foreground">Starting your experience...</p>
       </div>
     </div>
