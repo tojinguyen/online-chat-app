@@ -2,7 +2,7 @@
 
 import { AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import {
-  LoginResponseDto,
+  AuthenticationResponse,
   loginUser,
   refreshToken as refreshUserToken,
   registerUser,
@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const data: LoginResponseDto = await loginUser({ email, password });
+      const data: AuthenticationResponse = await loginUser({ email, password });
 
       // Lưu token vào localStorage
       localStorage.setItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN, data.accessToken);
@@ -137,7 +137,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const verifyToken = async (token: string): Promise<boolean> => {
     try {
-      console.log("Verifying token:", token);
       const response: VerifyTokenResponse = await verifyUserToken(token);
 
       if (response.valid) {

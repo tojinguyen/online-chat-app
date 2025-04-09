@@ -24,13 +24,17 @@ export default function SplashScreen() {
             AUTH_STORAGE_KEYS.REFRESH_TOKEN
           );
           console.log("Access Token:", accessToken);
-          console.log("Refresh Token exists:", !!refreshTokenStr);
+          console.log("Refresh Token:", refreshTokenStr);
         }
 
         let isValid = false;
 
-        // First try with access token
-        if (accessToken && accessToken !== undefined) {
+        // First try with access token - only if it appears to be valid
+        if (
+          accessToken &&
+          accessToken !== "undefined" &&
+          accessToken.length > 10
+        ) {
           console.log("Verifying access token...");
           try {
             isValid = await verifyToken(accessToken);
@@ -39,11 +43,16 @@ export default function SplashScreen() {
             console.error("Access token verification failed:", err);
           }
         } else {
-          console.log("No access token available");
+          console.log("No valid access token available");
         }
 
-        // If access token invalid, try refresh token
-        if (!isValid && refreshTokenStr && refreshTokenStr !== undefined) {
+        // If access token invalid, try refresh token - only if it appears to be valid
+        if (
+          !isValid &&
+          refreshTokenStr &&
+          refreshTokenStr !== "undefined" &&
+          refreshTokenStr.length > 10
+        ) {
           console.log("Attempting to refresh token...");
           try {
             const refreshSuccess = await refreshAccessToken(refreshTokenStr);
@@ -58,7 +67,11 @@ export default function SplashScreen() {
                 newAccessToken ? "exists" : "undefined"
               );
 
-              if (newAccessToken) {
+              if (
+                newAccessToken &&
+                newAccessToken !== "undefined" &&
+                newAccessToken.length > 10
+              ) {
                 isValid = await verifyToken(newAccessToken);
                 console.log("New token verification result:", isValid);
               }
@@ -66,6 +79,10 @@ export default function SplashScreen() {
           } catch (refreshErr) {
             console.error("Refresh token process failed:", refreshErr);
           }
+        } else if (!isValid) {
+          console.log(
+            "No valid refresh token available or access token is already valid"
+          );
         }
 
         // Navigate based on authentication status
