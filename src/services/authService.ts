@@ -60,6 +60,35 @@ const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
 
 /**
+ * Logout user and blacklist tokens
+ */
+export const logoutUser = async (
+  accessToken: string,
+  refreshToken: string
+): Promise<void> => {
+  try {
+    const response = await axios.post<ApiResponse<void>>(
+      `${API_URL}/auth/logout`,
+      { refreshToken },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || "Logout failed");
+    }
+
+    return;
+  } catch (error) {
+    console.error("Logout error:", error);
+    throw error;
+  }
+};
+
+/**
  * Login user with email and password
  */
 export const loginUser = async (

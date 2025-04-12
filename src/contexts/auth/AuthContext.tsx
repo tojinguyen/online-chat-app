@@ -4,6 +4,7 @@ import { AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import {
   AuthenticationResponse,
   loginUser,
+  logoutUser,
   refreshToken as refreshUserToken,
   registerUser,
   VerifyTokenResponse,
@@ -126,13 +127,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
-    localStorage.removeItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN);
-    localStorage.removeItem(AUTH_STORAGE_KEYS.USER);
+  const logout = async () => {
+    try {
+      // Get tokens from localStorage
+      const accessToken = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+      const refreshToken = localStorage.getItem(
+        AUTH_STORAGE_KEYS.REFRESH_TOKEN
+      );
 
-    setUser(null);
-    setIsAuthenticated(false);
+      // Call API to blacklist tokens if they exist
+      if (accessToken && refreshToken) {
+        await logoutUser(accessToken, refreshToken);
+      }
+    } catch (error) {
+      console.error("Logout API call failed:", error);
+      // Continue with logout process even if API call fails
+    } finally {
+      // Remove tokens from localStorage
+      localStorage.removeItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem(AUTH_STORAGE_KEYS.USER);
+
+      // Update state
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   };
 
   const verifyToken = async (token: string): Promise<boolean> => {
