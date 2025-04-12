@@ -3,14 +3,18 @@
 import { AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function SplashScreen() {
   const { verifyToken, refreshAccessToken } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
+    // Skip if already redirected to prevent loops
+    if (hasRedirected.current) return;
+
     const checkAuthentication = async () => {
       try {
         // Only access localStorage in the browser environment
@@ -89,14 +93,17 @@ export default function SplashScreen() {
         console.log("Final authentication status:", isValid);
         if (isValid) {
           console.log("Redirecting to home page");
-          router.replace("/home");
+          hasRedirected.current = true;
+          router.replace("/home", { scroll: false });
         } else {
           console.log("Redirecting to auth page");
-          router.replace("/auth");
+          hasRedirected.current = true;
+          router.replace("/auth", { scroll: false });
         }
       } catch (error) {
         console.error("Authentication check failed:", error);
-        router.replace("/auth"); // Changed to /auth to be consistent
+        hasRedirected.current = true;
+        router.replace("/auth", { scroll: false });
       } finally {
         setIsLoading(false);
       }
