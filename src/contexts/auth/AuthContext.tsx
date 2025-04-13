@@ -135,15 +135,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         AUTH_STORAGE_KEYS.REFRESH_TOKEN
       );
 
-      // Call API to blacklist tokens if they exist
-      if (accessToken && refreshToken) {
-        await logoutUser(accessToken, refreshToken);
-      }
-    } catch (error) {
-      console.error("Logout API call failed:", error);
-      // Continue with logout process even if API call fails
-    } finally {
-      // Remove tokens from localStorage
       localStorage.removeItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
       localStorage.removeItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN);
       localStorage.removeItem(AUTH_STORAGE_KEYS.USER);
@@ -151,6 +142,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Update state
       setUser(null);
       setIsAuthenticated(false);
+
+      // Call API to blacklist tokens if they exist
+      if (accessToken && refreshToken) {
+        await logoutUser(accessToken, refreshToken);
+      }
+    } catch (error) {
+      console.error("Logout API call failed:", error);
     }
   };
 
