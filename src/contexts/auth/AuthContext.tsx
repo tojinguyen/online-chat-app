@@ -35,7 +35,7 @@ interface AuthContextType {
     email: string,
     password: string,
     name: string,
-    avatar?: File | null
+    avatar: File // Thay đổi từ File | null | undefined thành bắt buộc
   ) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     email: string,
     password: string,
     fullName: string,
-    avatar?: File | null
+    avatar: File // Thay đổi từ File | null | undefined thành bắt buộc
   ) => {
     try {
       // Call the registerUser API function

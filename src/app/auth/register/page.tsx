@@ -36,6 +36,13 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
 
+    // Kiểm tra xem người dùng đã chọn avatar chưa
+    if (!avatar) {
+      setError("Please upload an avatar to continue");
+      setLoading(false);
+      return;
+    }
+
     try {
       await register(email, password, name, avatar);
 
