@@ -1,12 +1,13 @@
 "use client";
 
-import { registerUser } from "@/services/authService";
+import { useAuth } from "@/contexts/auth/AuthContext";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { register } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,12 +37,7 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      await registerUser({
-        email,
-        password,
-        fullName: name,
-        avatar,
-      });
+      await register(email, password, name, avatar);
 
       // Store registration data in session storage to use in verification page
       sessionStorage.setItem(

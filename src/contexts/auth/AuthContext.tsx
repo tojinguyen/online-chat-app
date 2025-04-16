@@ -31,7 +31,12 @@ interface AuthContextType {
   userDetails: UserDetails | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    name: string,
+    avatar?: File | null
+  ) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   verifyToken: (token: string) => Promise<boolean>;
@@ -106,7 +111,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const register = async (
     email: string,
     password: string,
-    fullName: string
+    fullName: string,
+    avatar?: File | null
   ) => {
     try {
       // Call the registerUser API function
@@ -114,6 +120,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         email,
         password,
         fullName,
+        avatar,
       });
 
       // After successful registration, log the user in
