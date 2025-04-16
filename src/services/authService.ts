@@ -20,6 +20,7 @@ export interface AuthenticationResponse {
   email: string;
   fullName: string;
   role: string;
+  avatarUrl?: string; // Thêm avatarUrl vào response
 }
 
 // For backwards compatibility, keeping the same name but using the new structure
@@ -33,6 +34,7 @@ export interface RegisterRequestDto {
   email: string;
   password: string;
   fullName: string;
+  avatar?: File | null; // Thêm trường avatar cho đăng ký
 }
 
 export interface VerifyEmailRegisterRequestDto {
@@ -40,6 +42,7 @@ export interface VerifyEmailRegisterRequestDto {
   password: string;
   fullName: string;
   code: string;
+  avatar?: File | null; // Thêm trường avatar cho xác thực
 }
 
 export interface RefreshTokenResponseDto {
@@ -53,6 +56,7 @@ export interface VerifyTokenResponse {
   email: string;
   fullName: string;
   role: string;
+  avatarUrl?: string; // Thêm avatarUrl vào response
 }
 
 // Base API URL
@@ -118,10 +122,32 @@ export const registerUser = async (
   data: RegisterRequestDto
 ): Promise<{ message: string }> => {
   try {
-    const response = await axios.post<ApiResponse<{ message: string }>>(
-      `${API_URL}/auth/register`,
-      data
-    );
+    let response;
+
+    // Sử dụng FormData nếu có avatar
+    if (data.avatar) {
+      const formData = new FormData();
+      formData.append("email", data.email);
+      formData.append("password", data.password);
+      formData.append("fullName", data.fullName);
+      formData.append("avatar", data.avatar);
+
+      response = await axios.post<ApiResponse<{ message: string }>>(
+        `${API_URL}/auth/register`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+    } else {
+      // Nếu không có avatar, sử dụng JSON như cũ
+      response = await axios.post<ApiResponse<{ message: string }>>(
+        `${API_URL}/auth/register`,
+        data
+      );
+    }
 
     if (!response.data.success) {
       throw new Error(response.data.message || "Registration failed");
@@ -140,27 +166,44 @@ export const registerUser = async (
 export const verifyEmailRegister = async (
   data: VerifyEmailRegisterRequestDto
 ): Promise<AuthenticationResponse> => {
-  const response = await fetch(`${API_URL}/auth/verify-register-code`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
+  try {
+    let response;
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || "Email verification failed");
+    // Sử dụng FormData nếu có avatar
+    if (data.avatar) {
+      const formData = new FormData();
+      formData.append("email", data.email);
+      formData.append("password", data.password);
+      formData.append("fullName", data.fullName);
+      formData.append("code", data.code);
+      formData.append("avatar", data.avatar);
+
+      response = await axios.post<ApiResponse<AuthenticationResponse>>(
+        `${API_URL}/auth/verify-register-code`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+    } else {
+      // Nếu không có avatar, sử dụng JSON như cũ
+      response = await axios.post<ApiResponse<AuthenticationResponse>>(
+        `${API_URL}/auth/verify-register-code`,
+        data
+      );
+    }
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || "Email verification failed");
+    }
+
+    return response.data.data;
+  } catch (error) {
+    console.error("Email verification error:", error);
+    throw error;
   }
-
-  const apiResponse: ApiResponse<AuthenticationResponse> =
-    await response.json();
-
-  if (!apiResponse.success) {
-    throw new Error(apiResponse.message || "Email verification failed");
-  }
-
-  return apiResponse.data;
 };
 
 /**

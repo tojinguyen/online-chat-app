@@ -23,6 +23,7 @@ interface UserDetails {
   email: string;
   fullName: string;
   role: string;
+  avatarUrl?: string; // Thêm trường avatarUrl cho user details
 }
 
 interface AuthContextType {
@@ -81,12 +82,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           email: data.email,
           fullName: data.fullName,
           role: data.role,
+          avatarUrl: data.avatarUrl, // Lưu avatarUrl
         })
       );
 
       console.log("Login successful:", data);
 
       setUser(email);
+      setUserDetails({
+        userId: data.userId,
+        email: data.email,
+        fullName: data.fullName,
+        role: data.role,
+        avatarUrl: data.avatarUrl, // Cập nhật userDetails với avatarUrl
+      });
       setIsAuthenticated(true);
     } catch (error) {
       console.error("Login failed:", error);
@@ -163,11 +172,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           email: response.email,
           fullName: response.fullName,
           role: response.role,
+          avatarUrl: response.avatarUrl, // Thêm avatarUrl
         });
         setIsAuthenticated(true);
 
         // Store user details in localStorage
-        localStorage.setItem(AUTH_STORAGE_KEYS.USER, response.email);
         localStorage.setItem(
           AUTH_STORAGE_KEYS.USER,
           JSON.stringify({
@@ -175,6 +184,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             email: response.email,
             fullName: response.fullName,
             role: response.role,
+            avatarUrl: response.avatarUrl, // Thêm avatarUrl
           })
         );
 

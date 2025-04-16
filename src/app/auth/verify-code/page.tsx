@@ -1,7 +1,8 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth/AuthContext";
-import { registerUser, verifyEmailRegister } from "@/services/authService";
+import { verifyEmailRegister } from "@/services/authService";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -16,7 +17,10 @@ export default function VerifyRegisterCode() {
     email: "",
     password: "",
     fullName: "",
+    hasAvatar: false,
   });
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     // Get registration data from session storage
@@ -29,6 +33,21 @@ export default function VerifyRegisterCode() {
     try {
       const parsedData = JSON.parse(storedData);
       setRegistrationData(parsedData);
+
+      // Nếu có avatar preview, lấy từ sessionStorage
+      const avatarPreview = sessionStorage.getItem("avatarPreview");
+      if (avatarPreview) {
+        setPreviewUrl(avatarPreview);
+
+        // Tạo file từ Blob URL (cần thêm phần xử lý này)
+        fetch(avatarPreview)
+          .then((res) => res.blob())
+          .then((blob) => {
+            const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
+            setAvatar(file);
+          })
+          .catch((err) => console.error("Error fetching avatar:", err));
+      }
     } catch (error) {
       console.error("Failed to parse registration data:", error);
       router.push("/auth/register");
@@ -47,6 +66,7 @@ export default function VerifyRegisterCode() {
         password: registrationData.password,
         fullName: registrationData.fullName,
         code,
+        avatar: avatar,
       });
 
       // Login the user automatically
@@ -54,6 +74,7 @@ export default function VerifyRegisterCode() {
 
       // Clean up session storage
       sessionStorage.removeItem("registrationData");
+      sessionStorage.removeItem("avatarPreview");
 
       // Redirect to home
       router.push("/");
@@ -69,10 +90,12 @@ export default function VerifyRegisterCode() {
 
   const handleResendCode = async () => {
     try {
-      await registerUser({
+      // Không cần gửi lại avatar trong phần resend code
+      await verifyEmailRegister({
         email: registrationData.email,
         password: registrationData.password,
         fullName: registrationData.fullName,
+        code: "",
       });
 
       setError("");
@@ -96,6 +119,20 @@ export default function VerifyRegisterCode() {
             Please enter the verification code sent to {registrationData.email}
           </p>
         </div>
+
+        {previewUrl && (
+          <div className="flex justify-center mt-4">
+            <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center relative">
+              <Image
+                src={previewUrl}
+                alt="Avatar preview"
+                width={96}
+                height={96}
+                className="object-cover w-full h-full"
+              />
+            </div>
+          </div>
+        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleVerify}>
           <div className="rounded-md shadow-sm -space-y-px">

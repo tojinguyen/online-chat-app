@@ -1,8 +1,9 @@
 "use client";
 
 import { registerUser } from "@/services/authService";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -11,6 +12,23 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
+      setAvatar(file);
+      // Tạo URL xem trước cho ảnh
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +40,7 @@ export default function RegisterPage() {
         email,
         password,
         fullName: name,
+        avatar,
       });
 
       // Store registration data in session storage to use in verification page
@@ -31,8 +50,14 @@ export default function RegisterPage() {
           email,
           password,
           fullName: name,
+          hasAvatar: !!avatar,
         })
       );
+
+      // Nếu có avatar, lưu vào sessionStorage dưới dạng Blob URL
+      if (avatar && previewUrl) {
+        sessionStorage.setItem("avatarPreview", previewUrl);
+      }
 
       // Redirect to verification page
       router.push("/auth/verify-code");
@@ -59,6 +84,46 @@ export default function RegisterPage() {
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleRegister}>
+          <div className="flex flex-col items-center mb-4">
+            <div
+              onClick={triggerFileInput}
+              className="w-24 h-24 rounded-full bg-gray-200 border-2 border-gray-300 cursor-pointer overflow-hidden flex items-center justify-center relative"
+            >
+              {previewUrl ? (
+                <Image
+                  src={previewUrl}
+                  alt="Avatar preview"
+                  width={96}
+                  height={96}
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-12 w-12 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+              )}
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleAvatarChange}
+            />
+            <p className="text-sm text-gray-600 mt-2">Click to upload avatar</p>
+          </div>
+
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <label htmlFor="name" className="sr-only">

@@ -2,16 +2,17 @@
 
 import MessageList from "@/components/messages/MessageList";
 import { useAuth } from "@/contexts/auth/AuthContext";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function HomePage() {
-  const { user, logout } = useAuth();
+  const { user, userDetails, logout } = useAuth();
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<
-    { id: string; name: string; status: string }[]
+    { id: string; name: string; status: string; avatarUrl?: string }[]
   >([]);
   const [activeTab, setActiveTab] = useState("chats"); // 'chats' or 'friends'
   const [searching, setSearching] = useState(false);
@@ -25,18 +26,20 @@ export default function HomePage() {
       name: "Chat Group 1",
       lastMessage: "Hello there!",
       time: "10:30 AM",
+      avatarUrl: null,
     },
     {
       id: "2",
       name: "Chat Group 2",
       lastMessage: "Meeting at 2pm",
       time: "09:15 AM",
+      avatarUrl: null,
     },
   ];
 
   const friends = [
-    { id: "3", name: "John Doe", status: "online" },
-    { id: "4", name: "Jane Smith", status: "offline" },
+    { id: "3", name: "John Doe", status: "online", avatarUrl: null },
+    { id: "4", name: "Jane Smith", status: "offline", avatarUrl: null },
   ];
 
   const messages = [
@@ -84,8 +87,8 @@ export default function HomePage() {
     setTimeout(() => {
       if (searchQuery.trim()) {
         const results = [
-          { id: "5", name: "Tim Search", status: "online" },
-          { id: "6", name: "Sarah Query", status: "offline" },
+          { id: "5", name: "Tim Search", status: "online", avatarUrl: null },
+          { id: "6", name: "Sarah Query", status: "offline", avatarUrl: null },
         ].filter((f) =>
           f.name.toLowerCase().includes(searchQuery.toLowerCase())
         );
@@ -110,6 +113,27 @@ export default function HomePage() {
     }
   };
 
+  // Render avatar hoặc placeholder
+  const renderAvatar = (name: string, avatarUrl?: string | null) => {
+    if (avatarUrl) {
+      return (
+        <Image
+          src={avatarUrl}
+          alt={`${name}'s avatar`}
+          width={40}
+          height={40}
+          className="w-full h-full object-cover rounded-full"
+        />
+      );
+    } else {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-gray-300 text-white">
+          {name.charAt(0).toUpperCase()}
+        </div>
+      );
+    }
+  };
+
   if (!user) {
     return null;
   }
@@ -120,10 +144,24 @@ export default function HomePage() {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold">
-                {user.charAt(0).toUpperCase()}
+              <div className="w-10 h-10 rounded-full overflow-hidden">
+                {userDetails?.avatarUrl ? (
+                  <Image
+                    src={userDetails.avatarUrl}
+                    alt="User avatar"
+                    width={40}
+                    height={40}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-indigo-500 text-white font-semibold">
+                    {(userDetails?.fullName || user).charAt(0).toUpperCase()}
+                  </div>
+                )}
               </div>
-              <span className="ml-2 font-medium">{user}</span>
+              <span className="ml-2 font-medium">
+                {userDetails?.fullName || user}
+              </span>
             </div>
             <button
               onClick={handleLogout}
@@ -190,8 +228,8 @@ export default function HomePage() {
                         key={result.id}
                         className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer"
                       >
-                        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-white">
-                          {result.name.charAt(0)}
+                        <div className="w-8 h-8 rounded-full overflow-hidden">
+                          {renderAvatar(result.name, result.avatarUrl)}
                         </div>
                         <span className="ml-2">{result.name}</span>
                         <span
@@ -248,8 +286,8 @@ export default function HomePage() {
                   }`}
                   onClick={() => setSelectedChat(chat.id)}
                 >
-                  <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-white">
-                    {chat.name.charAt(0)}
+                  <div className="w-10 h-10 rounded-full overflow-hidden">
+                    {renderAvatar(chat.name, chat.avatarUrl)}
                   </div>
                   <div className="ml-3 flex-1">
                     <div className="flex items-center justify-between">
@@ -275,8 +313,8 @@ export default function HomePage() {
                   }`}
                   onClick={() => setSelectedChat(friend.id)}
                 >
-                  <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-white">
-                    {friend.name.charAt(0)}
+                  <div className="w-10 h-10 rounded-full overflow-hidden">
+                    {renderAvatar(friend.name, friend.avatarUrl)}
                   </div>
                   <div className="ml-3 flex-1">
                     <div className="flex items-center justify-between">
@@ -304,11 +342,14 @@ export default function HomePage() {
         {selectedChat ? (
           <>
             <div className="p-4 border-b border-gray-200 bg-white flex items-center">
-              <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-white">
-                {(
-                  conversations.find((c) => c.id === selectedChat) ||
-                  friends.find((f) => f.id === selectedChat)
-                )?.name.charAt(0)}
+              <div className="w-10 h-10 rounded-full overflow-hidden">
+                {renderAvatar(
+                  conversations.find((c) => c.id === selectedChat)?.name ||
+                    friends.find((f) => f.id === selectedChat)?.name ||
+                    "",
+                  conversations.find((c) => c.id === selectedChat)?.avatarUrl ||
+                    friends.find((f) => f.id === selectedChat)?.avatarUrl
+                )}
               </div>
               <div className="ml-3">
                 <h2 className="font-medium text-lg">
