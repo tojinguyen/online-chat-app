@@ -12,7 +12,7 @@ export default function HomePage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<
-    { id: string; name: string; status: string; avatarUrl?: string }[]
+    { id: string; name: string; status: string; avatarUrl?: string | null }[]
   >([]);
   const [activeTab, setActiveTab] = useState("chats"); // 'chats' or 'friends'
   const [searching, setSearching] = useState(false);
