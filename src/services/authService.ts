@@ -39,10 +39,7 @@ export interface RegisterRequestDto {
 
 export interface VerifyEmailRegisterRequestDto {
   email: string;
-  password: string;
-  fullName: string;
-  code: string;
-  avatar?: File | null; // Thêm trường avatar cho xác thực
+  verificationCode: string;
 }
 
 export interface RefreshTokenResponseDto {
@@ -167,33 +164,10 @@ export const verifyEmailRegister = async (
   data: VerifyEmailRegisterRequestDto
 ): Promise<AuthenticationResponse> => {
   try {
-    let response;
-
-    // Sử dụng FormData nếu có avatar
-    if (data.avatar) {
-      const formData = new FormData();
-      formData.append("email", data.email);
-      formData.append("password", data.password);
-      formData.append("fullName", data.fullName);
-      formData.append("code", data.code);
-      formData.append("avatar", data.avatar);
-
-      response = await axios.post<ApiResponse<AuthenticationResponse>>(
-        `${API_URL}/auth/verify-register-code`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-    } else {
-      // Nếu không có avatar, sử dụng JSON như cũ
-      response = await axios.post<ApiResponse<AuthenticationResponse>>(
-        `${API_URL}/auth/verify-register-code`,
-        data
-      );
-    }
+    const response = await axios.post<ApiResponse<AuthenticationResponse>>(
+      `${API_URL}/auth/verify-register-code`,
+      data
+    );
 
     if (!response.data.success) {
       throw new Error(response.data.message || "Email verification failed");

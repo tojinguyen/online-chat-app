@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 export default function VerifyRegisterCode() {
   const router = useRouter();
   const { login } = useAuth();
-  const [code, setCode] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [registrationData, setRegistrationData] = useState({
@@ -65,7 +65,7 @@ export default function VerifyRegisterCode() {
         email: registrationData.email,
         password: registrationData.password,
         fullName: registrationData.fullName,
-        code,
+        verificationCode: verificationCode,
         avatar: avatar,
       });
 
@@ -95,7 +95,7 @@ export default function VerifyRegisterCode() {
         email: registrationData.email,
         password: registrationData.password,
         fullName: registrationData.fullName,
-        code: "",
+        verificationCode: "",
       });
 
       setError("");
@@ -147,8 +147,8 @@ export default function VerifyRegisterCode() {
                 required
                 className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Enter verification code"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
               />
             </div>
           </div>
