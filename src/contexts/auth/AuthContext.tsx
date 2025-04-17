@@ -122,20 +122,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         fullName,
         avatar,
       });
-
-      // After successful registration, log the user in
-      try {
-        await login(email, password);
-      } catch (loginError) {
-        console.error("Auto login after registration failed:", loginError);
-        // Registration was successful, but auto-login failed
-        // We can either throw an error or handle it differently
-        throw new Error(
-          "Registration successful but login failed. Please try logging in manually."
-        );
-      }
-
-      // Registration successful, no need to return a value
       return;
     } catch (error) {
       console.error("Registration failed:", error);

@@ -119,6 +119,10 @@ export const registerUser = async (
   data: RegisterRequestDto
 ): Promise<{ message: string }> => {
   try {
+    if (data.avatar && !(data.avatar instanceof File)) {
+      throw new Error("Avatar must be a File object");
+    }
+
     let response;
 
     // Sử dụng FormData nếu có avatar
@@ -130,7 +134,7 @@ export const registerUser = async (
       formData.append("avatar", data.avatar);
 
       response = await axios.post<ApiResponse<{ message: string }>>(
-        `${API_URL}/auth/register`,
+        `${API_URL}/auth/send-register-code`,
         formData,
         {
           headers: {
@@ -138,16 +142,10 @@ export const registerUser = async (
           },
         }
       );
-    } else {
-      // Nếu không có avatar, sử dụng JSON như cũ
-      response = await axios.post<ApiResponse<{ message: string }>>(
-        `${API_URL}/auth/register`,
-        data
-      );
     }
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || "Registration failed");
+    if (!response || !response.data.success) {
+      throw new Error(response?.data?.message || "Registration failed");
     }
 
     return response.data.data;
