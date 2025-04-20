@@ -19,7 +19,6 @@ export default function VerifyRegisterCode() {
     fullName: "",
     hasAvatar: false,
   });
-  const [avatar, setAvatar] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,13 +39,13 @@ export default function VerifyRegisterCode() {
         setPreviewUrl(avatarPreview);
 
         // Tạo file từ Blob URL (cần thêm phần xử lý này)
-        fetch(avatarPreview)
-          .then((res) => res.blob())
-          .then((blob) => {
-            const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
-            setAvatar(file);
-          })
-          .catch((err) => console.error("Error fetching avatar:", err));
+        // fetch(avatarPreview)
+        //   .then((res) => res.blob())
+        //   .then((blob) => {
+        //     const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
+        //     setAvatar(file);
+        //   })
+        //   .catch((err) => console.error("Error fetching avatar:", err));
       }
     } catch (error) {
       console.error("Failed to parse registration data:", error);
@@ -63,10 +62,7 @@ export default function VerifyRegisterCode() {
       // Call verify API
       await verifyEmailRegister({
         email: registrationData.email,
-        password: registrationData.password,
-        fullName: registrationData.fullName,
         verificationCode: verificationCode,
-        avatar: avatar,
       });
 
       // Login the user automatically
@@ -93,9 +89,7 @@ export default function VerifyRegisterCode() {
       // Không cần gửi lại avatar trong phần resend code
       await verifyEmailRegister({
         email: registrationData.email,
-        password: registrationData.password,
-        fullName: registrationData.fullName,
-        verificationCode: "",
+        verificationCode: verificationCode,
       });
 
       setError("");
