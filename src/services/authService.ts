@@ -163,7 +163,7 @@ export const verifyEmailRegister = async (
 ): Promise<AuthenticationResponse> => {
   try {
     const response = await axios.post<ApiResponse<AuthenticationResponse>>(
-      `${API_URL}/auth/verify-register-code`,
+      `${API_URL}/auth/verify-registration-code`,
       data
     );
 
