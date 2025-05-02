@@ -130,11 +130,11 @@ export const registerUser = async (
       const formData = new FormData();
       formData.append("email", data.email);
       formData.append("password", data.password);
-      formData.append("fullName", data.fullName);
+      formData.append("name", data.fullName);
       formData.append("avatar", data.avatar);
 
       response = await axios.post<ApiResponse<{ message: string }>>(
-        `${API_URL}/auth/send-register-code`,
+        `${API_URL}/auth/register`,
         formData,
         {
           headers: {
