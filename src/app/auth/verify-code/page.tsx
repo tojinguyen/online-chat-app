@@ -62,7 +62,7 @@ export default function VerifyRegisterCode() {
       // Call verify API
       await verifyEmailRegister({
         email: registrationData.email,
-        verificationCode: verificationCode,
+        code: verificationCode,
       });
 
       // Login the user automatically
@@ -89,7 +89,7 @@ export default function VerifyRegisterCode() {
       // Không cần gửi lại avatar trong phần resend code
       await verifyEmailRegister({
         email: registrationData.email,
-        verificationCode: verificationCode,
+        code: verificationCode,
       });
 
       setError("");

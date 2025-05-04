@@ -38,8 +38,9 @@ export interface RegisterRequestDto {
 }
 
 export interface VerifyEmailRegisterRequestDto {
+  id: string;
   email: string;
-  verificationCode: string;
+  code: string;
 }
 
 export interface RefreshTokenResponseDto {
