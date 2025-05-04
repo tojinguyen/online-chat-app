@@ -31,10 +31,12 @@ export interface SearchUsersParams {
 /**
  * Search for users based on query parameters
  * @param params Search parameters (name, page, limit)
+ * @param token Access token for authentication
  * @returns Promise with search results
  */
 export const searchUsers = async (
-  params: SearchUsersParams
+  params: SearchUsersParams,
+  token: string
 ): Promise<SearchUsersResponse> => {
   try {
     // Build query parameters
@@ -44,7 +46,12 @@ export const searchUsers = async (
     if (params.limit) queryParams.append("limit", params.limit.toString());
 
     const response = await axios.get<ApiResponse<SearchUsersResponse>>(
-      `${API_URL}/profile/users?${queryParams.toString()}`
+      `${API_URL}/profile/users?${queryParams.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
     );
 
     if (!response.data.success) {

@@ -87,12 +87,23 @@ export default function HomePage() {
     setSearching(true);
 
     try {
-      // Use the actual API call instead of mock data
-      const result = await searchUsers({
-        name: searchQuery.trim(),
-        page: currentPage,
-        limit: 10,
-      });
+      // Get the access token from localStorage
+      const accessToken = localStorage.getItem("accessToken");
+
+      if (!accessToken) {
+        console.error("No access token available");
+        throw new Error("Authentication required");
+      }
+
+      // Use the actual API call with token
+      const result = await searchUsers(
+        {
+          name: searchQuery.trim(),
+          page: currentPage,
+          limit: 10,
+        },
+        accessToken
+      );
 
       setSearchResults(result.users);
       setTotalPages(result.totalPages);
