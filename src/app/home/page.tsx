@@ -2,6 +2,7 @@
 
 import MessageList from "@/components/messages/MessageList";
 import { useAuth } from "@/contexts/auth/AuthContext";
+import { searchUsers, UserProfile } from "@/services/profileService";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -11,13 +12,14 @@ export default function HomePage() {
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<
-    { id: string; name: string; status: string; avatarUrl?: string | null }[]
-  >([]);
+  const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [activeTab, setActiveTab] = useState("chats"); // 'chats' or 'friends'
   const [searching, setSearching] = useState(false);
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [messageText, setMessageText] = useState(""); // Add state for message input
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Sample data (to be replaced with actual API calls)
   const conversations = [
@@ -80,24 +82,28 @@ export default function HomePage() {
     }
   }, [user, router]);
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSearching(true);
-    // Mock search results - replace with actual API call
-    setTimeout(() => {
-      if (searchQuery.trim()) {
-        const results = [
-          { id: "5", name: "Tim Search", status: "online", avatarUrl: null },
-          { id: "6", name: "Sarah Query", status: "offline", avatarUrl: null },
-        ].filter((f) =>
-          f.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-        setSearchResults(results);
-      } else {
-        setSearchResults([]);
-      }
+
+    try {
+      // Use the actual API call instead of mock data
+      const result = await searchUsers({
+        name: searchQuery.trim(),
+        page: currentPage,
+        limit: 10,
+      });
+
+      setSearchResults(result.users);
+      setTotalPages(result.totalPages);
+      setCurrentPage(result.page);
+      setTotalCount(result.totalCount);
+    } catch (error) {
+      console.error("Search failed:", error);
+      setSearchResults([]);
+    } finally {
       setSearching(false);
-    }, 500);
+    }
   };
 
   const handleLogout = () => {
@@ -214,7 +220,9 @@ export default function HomePage() {
 
         {searchQuery && (
           <div className="p-4 border-b border-gray-200">
-            <h3 className="font-medium text-gray-700 mb-2">Search Results</h3>
+            <h3 className="font-medium text-gray-700 mb-2">
+              Search Results {totalCount > 0 && `(${totalCount})`}
+            </h3>
             {searching ? (
               <div className="flex justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500" />
@@ -222,26 +230,73 @@ export default function HomePage() {
             ) : (
               <>
                 {searchResults.length > 0 ? (
-                  <ul className="space-y-2">
-                    {searchResults.map((result) => (
-                      <li
-                        key={result.id}
-                        className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer"
-                      >
-                        <div className="w-8 h-8 rounded-full overflow-hidden">
-                          {renderAvatar(result.name, result.avatarUrl)}
-                        </div>
-                        <span className="ml-2">{result.name}</span>
-                        <span
-                          className={`ml-auto w-2 h-2 rounded-full ${
-                            result.status === "online"
-                              ? "bg-green-500"
-                              : "bg-gray-300"
+                  <>
+                    <ul className="space-y-2">
+                      {searchResults.map((result) => (
+                        <li
+                          key={result.id}
+                          className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer"
+                        >
+                          <div className="w-8 h-8 rounded-full overflow-hidden">
+                            {renderAvatar(result.fullName, result.avatarUrl)}
+                          </div>
+                          <span className="ml-2">{result.fullName}</span>
+                          <span
+                            className={`ml-auto w-2 h-2 rounded-full ${
+                              result.status === "online"
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }`}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Pagination controls */}
+                    {totalPages > 1 && (
+                      <div className="flex justify-center space-x-2 mt-4">
+                        <button
+                          onClick={() => {
+                            if (currentPage > 1) {
+                              setCurrentPage(currentPage - 1);
+                              handleSearch({
+                                preventDefault: () => {},
+                              } as React.FormEvent<HTMLFormElement>);
+                            }
+                          }}
+                          disabled={currentPage === 1}
+                          className={`px-3 py-1 rounded ${
+                            currentPage === 1
+                              ? "bg-gray-100 text-gray-400"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                           }`}
-                        />
-                      </li>
-                    ))}
-                  </ul>
+                        >
+                          Prev
+                        </button>
+                        <span className="px-3 py-1">
+                          Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                          onClick={() => {
+                            if (currentPage < totalPages) {
+                              setCurrentPage(currentPage + 1);
+                              handleSearch({
+                                preventDefault: () => {},
+                              } as React.FormEvent<HTMLFormElement>);
+                            }
+                          }}
+                          disabled={currentPage === totalPages}
+                          className={`px-3 py-1 rounded ${
+                            currentPage === totalPages
+                              ? "bg-gray-100 text-gray-400"
+                              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                          }`}
+                        >
+                          Next
+                        </button>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <p className="text-gray-800 text-sm text-center">
                     No users found
