@@ -7,7 +7,6 @@ import {
   logoutUser,
   refreshToken as refreshUserToken,
   registerUser,
-  VerifyTokenResponse,
   verifyUserToken,
 } from "@/services/authService";
 import {
@@ -156,34 +155,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const verifyToken = async (token: string): Promise<boolean> => {
     try {
-      const response: VerifyTokenResponse = await verifyUserToken(token);
+      const response: AuthenticationResponse = await verifyUserToken(token);
 
-      if (response.valid) {
-        setUser(response.email);
-        setUserDetails({
+      setUser(response.email);
+      setUserDetails({
+        userId: response.userId,
+        email: response.email,
+        fullName: response.fullName,
+        role: response.role,
+        avatarUrl: response.avatarUrl, // Thêm avatarUrl
+      });
+      setIsAuthenticated(true);
+
+      // Store user details in localStorage
+      localStorage.setItem(
+        AUTH_STORAGE_KEYS.USER,
+        JSON.stringify({
           userId: response.userId,
           email: response.email,
           fullName: response.fullName,
           role: response.role,
           avatarUrl: response.avatarUrl, // Thêm avatarUrl
-        });
-        setIsAuthenticated(true);
+        })
+      );
 
-        // Store user details in localStorage
-        localStorage.setItem(
-          AUTH_STORAGE_KEYS.USER,
-          JSON.stringify({
-            userId: response.userId,
-            email: response.email,
-            fullName: response.fullName,
-            role: response.role,
-            avatarUrl: response.avatarUrl, // Thêm avatarUrl
-          })
-        );
-
-        return true;
-      }
-      return false;
+      return true;
     } catch (error) {
       console.error("Token verification failed:", error);
       return false;

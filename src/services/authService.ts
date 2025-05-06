@@ -240,7 +240,7 @@ export const resetPassword = async (
  */
 export const verifyUserToken = async (
   token: string
-): Promise<VerifyTokenResponse> => {
+): Promise<AuthenticationResponse> => {
   try {
     const response = await fetch(`${API_URL}/auth/verify-token`, {
       method: "GET",
@@ -254,7 +254,8 @@ export const verifyUserToken = async (
       throw new Error("Token verification failed");
     }
 
-    const apiResponse: ApiResponse<VerifyTokenResponse> = await response.json();
+    const apiResponse: ApiResponse<AuthenticationResponse> =
+      await response.json();
 
     if (!apiResponse.success) {
       throw new Error(apiResponse.message || "Token verification failed");
@@ -263,7 +264,15 @@ export const verifyUserToken = async (
     return apiResponse.data;
   } catch (error) {
     console.error("Error verifying token:", error);
-    return { valid: false, userId: "", email: "", fullName: "", role: "" };
+    return {
+      accessToken: "",
+      refreshToken: "",
+      userId: "",
+      email: "",
+      fullName: "",
+      role: "",
+      avatarUrl: "",
+    };
   }
 };
 
