@@ -8,18 +8,15 @@ const API_URL =
 // User profile interfaces
 export interface UserProfile {
   id: string;
-  email: string;
-  fullName: string;
-  status: string; // "online" | "offline"
+  name: string;
   avatarUrl?: string | null;
-  lastSeen?: Date | string | null;
 }
 
 export interface SearchUsersResponse {
   users: UserProfile[];
-  totalCount: number;
+  total_count: number;
   page: number;
-  totalPages: number;
+  limit: number;
 }
 
 export interface SearchUsersParams {

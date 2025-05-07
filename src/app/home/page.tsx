@@ -106,9 +106,11 @@ export default function HomePage() {
       );
 
       setSearchResults(result.users);
-      setTotalPages(result.totalPages);
+      // Calculate total pages based on total_count and limit
+      const calculatedTotalPages = Math.ceil(result.total_count / result.limit);
+      setTotalPages(calculatedTotalPages);
       setCurrentPage(result.page);
-      setTotalCount(result.totalCount);
+      setTotalCount(result.total_count);
     } catch (error) {
       console.error("Search failed:", error);
       setSearchResults([]);
@@ -249,15 +251,11 @@ export default function HomePage() {
                           className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer"
                         >
                           <div className="w-8 h-8 rounded-full overflow-hidden">
-                            {renderAvatar(result.fullName, result.avatarUrl)}
+                            {renderAvatar(result.name, result.avatarUrl)}
                           </div>
-                          <span className="ml-2">{result.fullName}</span>
+                          <span className="ml-2">{result.name}</span>
                           <span
-                            className={`ml-auto w-2 h-2 rounded-full ${
-                              result.status === "online"
-                                ? "bg-green-500"
-                                : "bg-gray-300"
-                            }`}
+                            className={`ml-auto w-2 h-2 rounded-full bg-gray-300`}
                           />
                         </li>
                       ))}
