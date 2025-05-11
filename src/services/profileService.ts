@@ -53,7 +53,7 @@ export const searchUsers = async (
     queryParams.append("limit", limit.toString());
 
     const response = await axios.get(
-      `${API_URL}/profile/users?${queryParams.toString()}`,
+      `${API_URL}/users?${queryParams.toString()}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -82,7 +82,7 @@ export const getUserProfile = async (
       throw new Error("Authentication required");
     }
 
-    const response = await axios.get(`${API_URL}/profile/users/${userId}`, {
+    const response = await axios.get(`${API_URL}/users/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
