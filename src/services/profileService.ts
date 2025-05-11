@@ -1,4 +1,3 @@
-import { API_URL } from "@/constants/authConstants";
 import axios from "axios";
 
 // User profile interfaces
@@ -52,8 +51,9 @@ export const searchUsers = async (
     queryParams.append("page", page.toString());
     queryParams.append("limit", limit.toString());
 
+    // Using Next.js API route as a proxy to avoid CORS issues
     const response = await axios.get(
-      `${API_URL}/users?${queryParams.toString()}`,
+      `/api/proxy/users?${queryParams.toString()}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -82,7 +82,8 @@ export const getUserProfile = async (
       throw new Error("Authentication required");
     }
 
-    const response = await axios.get(`${API_URL}/users/${userId}`, {
+    // Using Next.js API route as a proxy to avoid CORS issues
+    const response = await axios.get(`/api/proxy/users/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
