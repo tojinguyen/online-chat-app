@@ -84,7 +84,7 @@ export default function FriendsList() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="bg-white rounded-lg">
       <h3 className="font-semibold text-lg p-4 border-b">Friends</h3>
 
       {friends.length > 0 ? (

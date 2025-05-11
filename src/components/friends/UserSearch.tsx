@@ -107,7 +107,7 @@ export default function UserSearch({ onSendRequest }: UserSearchProps) {
       </div>
 
       {users.length > 0 ? (
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white rounded-lg">
           <ul className="divide-y divide-gray-200">
             {users.map((user) => (
               <li

@@ -100,7 +100,7 @@ export default function FriendRequests({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="bg-white rounded-lg">
       <h3 className="font-semibold text-lg p-4 border-b">Friend Requests</h3>
 
       {requests.length > 0 ? (
