@@ -1,3 +1,5 @@
+"use client";
+
 import { sendFriendRequest } from "@/services/friendService";
 import { searchUsers, UserItem } from "@/services/profileService";
 import Image from "next/image";

@@ -1,3 +1,4 @@
+"use client";
 import FriendRequests from "@/components/friends/FriendRequests";
 import FriendsList from "@/components/friends/FriendsList";
 import UserSearch from "@/components/friends/UserSearch";

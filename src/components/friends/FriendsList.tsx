@@ -1,3 +1,5 @@
+"use client";
+
 import { Friend, getFriends, removeFriend } from "@/services/friendService";
 import Image from "next/image";
 import { useEffect, useState } from "react";
