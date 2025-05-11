@@ -2,7 +2,7 @@
 
 import MessageList from "@/components/messages/MessageList";
 import { useAuth } from "@/contexts/auth/AuthContext";
-import { searchUsers, UserProfile } from "@/services/profileService";
+import { searchUsers, UserItem } from "@/services/profileService";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -12,7 +12,7 @@ export default function HomePage() {
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
+  const [searchResults, setSearchResults] = useState<UserItem[]>([]);
   const [activeTab, setActiveTab] = useState("chats"); // 'chats' or 'friends'
   const [searching, setSearching] = useState(false);
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
@@ -87,30 +87,22 @@ export default function HomePage() {
     setSearching(true);
 
     try {
-      // Get the access token from localStorage
-      const accessToken = localStorage.getItem("accessToken");
+      // Use the updated search users function
+      const response = await searchUsers(searchQuery.trim(), currentPage, 10);
 
-      if (!accessToken) {
-        console.error("No access token available");
-        throw new Error("Authentication required");
+      if (response.success) {
+        setSearchResults(response.data.users);
+        // Calculate total pages based on total_count and limit
+        const calculatedTotalPages = Math.ceil(
+          response.data.total_count / response.data.limit
+        );
+        setTotalPages(calculatedTotalPages);
+        setCurrentPage(response.data.page);
+        setTotalCount(response.data.total_count);
+      } else {
+        console.error("Search failed:", response.message);
+        setSearchResults([]);
       }
-
-      // Use the actual API call with token
-      const result = await searchUsers(
-        {
-          name: searchQuery.trim(),
-          page: currentPage,
-          limit: 10,
-        },
-        accessToken
-      );
-
-      setSearchResults(result.users);
-      // Calculate total pages based on total_count and limit
-      const calculatedTotalPages = Math.ceil(result.total_count / result.limit);
-      setTotalPages(calculatedTotalPages);
-      setCurrentPage(result.page);
-      setTotalCount(result.total_count);
     } catch (error) {
       console.error("Search failed:", error);
       setSearchResults([]);
@@ -251,7 +243,7 @@ export default function HomePage() {
                           className="flex items-center p-2 hover:bg-gray-50 rounded-md cursor-pointer"
                         >
                           <div className="w-8 h-8 rounded-full overflow-hidden">
-                            {renderAvatar(result.name, result.avatarUrl)}
+                            {renderAvatar(result.name, result.avatar_url)}
                           </div>
                           <span className="ml-2">{result.name}</span>
                           <span
@@ -336,6 +328,12 @@ export default function HomePage() {
             onClick={() => setActiveTab("friends")}
           >
             Friends
+          </button>
+          <button
+            className="flex-1 py-3 font-medium text-sm text-gray-500 hover:text-gray-700"
+            onClick={() => router.push("/friends")}
+          >
+            Manage Friends
           </button>
         </div>
 

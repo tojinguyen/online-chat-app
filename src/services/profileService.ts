@@ -1,48 +1,58 @@
+import { API_URL } from "@/constants/authConstants";
 import axios from "axios";
-import { ApiResponse } from "./authService";
-
-// Base API URL
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
 // User profile interfaces
-export interface UserProfile {
+export interface UserItem {
   id: string;
   name: string;
-  avatarUrl?: string | null;
+  avatar_url: string;
 }
 
-export interface SearchUsersResponse {
-  users: UserProfile[];
+export interface ProfileResponse {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url: string;
+}
+
+export interface SearchUsersOutput {
+  users: UserItem[];
   total_count: number;
   page: number;
   limit: number;
 }
 
-export interface SearchUsersParams {
-  name?: string;
-  page?: number;
-  limit?: number;
+export interface ApiResponseWithData<T> {
+  success: boolean;
+  message: string;
+  data: T;
 }
 
 /**
- * Search for users based on query parameters
- * @param params Search parameters (name, page, limit)
- * @param token Access token for authentication
+ * Search for users by name
+ * @param query Name to search for
+ * @param page Page number
+ * @param limit Number of items per page
  * @returns Promise with search results
  */
 export const searchUsers = async (
-  params: SearchUsersParams,
-  token: string
-): Promise<SearchUsersResponse> => {
+  query: string,
+  page: number = 1,
+  limit: number = 10
+): Promise<ApiResponseWithData<SearchUsersOutput>> => {
   try {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      throw new Error("Authentication required");
+    }
+
     // Build query parameters
     const queryParams = new URLSearchParams();
-    if (params.name) queryParams.append("name", params.name);
-    if (params.page) queryParams.append("page", params.page.toString());
-    if (params.limit) queryParams.append("limit", params.limit.toString());
+    queryParams.append("name", query);
+    queryParams.append("page", page.toString());
+    queryParams.append("limit", limit.toString());
 
-    const response = await axios.get<ApiResponse<SearchUsersResponse>>(
+    const response = await axios.get(
       `${API_URL}/profile/users?${queryParams.toString()}`,
       {
         headers: {
@@ -51,11 +61,7 @@ export const searchUsers = async (
       }
     );
 
-    if (!response.data.success) {
-      throw new Error(response.data.message || "Failed to search users");
-    }
-
-    return response.data.data;
+    return response.data;
   } catch (error) {
     console.error("Error searching users:", error);
     throw error;
@@ -67,17 +73,22 @@ export const searchUsers = async (
  * @param userId User ID
  * @returns Promise with user profile
  */
-export const getUserProfile = async (userId: string): Promise<UserProfile> => {
+export const getUserProfile = async (
+  userId: string
+): Promise<ApiResponseWithData<ProfileResponse>> => {
   try {
-    const response = await axios.get<ApiResponse<UserProfile>>(
-      `${API_URL}/profile/users/${userId}`
-    );
-
-    if (!response.data.success) {
-      throw new Error(response.data.message || "Failed to get user profile");
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      throw new Error("Authentication required");
     }
 
-    return response.data.data;
+    const response = await axios.get(`${API_URL}/profile/users/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
   } catch (error) {
     console.error("Error fetching user profile:", error);
     throw error;
