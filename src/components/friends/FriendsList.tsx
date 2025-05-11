@@ -33,9 +33,9 @@ export default function FriendsList() {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     loadFriends();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, limit]);
 
   const handleRemoveFriend = async (friendId: string) => {
@@ -48,9 +48,20 @@ export default function FriendsList() {
       } else {
         toast.error(response.message || "Failed to remove friend");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to remove friend:", error);
-      toast.error(error.response?.data?.message || "Failed to remove friend");
+      if (error instanceof Error) {
+        const errorWithResponse = error as {
+          response?: { data?: { message?: string } };
+        };
+        if (errorWithResponse.response?.data?.message) {
+          toast.error(errorWithResponse.response.data.message);
+        } else {
+          toast.error("Failed to remove friend");
+        }
+      } else {
+        toast.error("Failed to remove friend");
+      }
     }
   };
 

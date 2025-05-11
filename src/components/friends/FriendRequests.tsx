@@ -38,7 +38,6 @@ export default function FriendRequests({
   useEffect(() => {
     loadFriendRequests();
   }, []);
-
   const handleAccept = async (requestId: string) => {
     try {
       const response = await acceptFriendRequest(requestId);
@@ -50,12 +49,22 @@ export default function FriendRequests({
       } else {
         toast.error(response.message || "Failed to accept request");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to accept friend request:", error);
-      toast.error(error.response?.data?.message || "Failed to accept request");
+      if (error instanceof Error) {
+        const errorWithResponse = error as {
+          response?: { data?: { message?: string } };
+        };
+        if (errorWithResponse.response?.data?.message) {
+          toast.error(errorWithResponse.response.data.message);
+        } else {
+          toast.error("Failed to accept request");
+        }
+      } else {
+        toast.error("Failed to accept request");
+      }
     }
   };
-
   const handleReject = async (requestId: string) => {
     try {
       const response = await rejectFriendRequest(requestId);
@@ -67,9 +76,20 @@ export default function FriendRequests({
       } else {
         toast.error(response.message || "Failed to reject request");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to reject friend request:", error);
-      toast.error(error.response?.data?.message || "Failed to reject request");
+      if (error instanceof Error) {
+        const errorWithResponse = error as {
+          response?: { data?: { message?: string } };
+        };
+        if (errorWithResponse.response?.data?.message) {
+          toast.error(errorWithResponse.response.data.message);
+        } else {
+          toast.error("Failed to reject request");
+        }
+      } else {
+        toast.error("Failed to reject request");
+      }
     }
   };
 

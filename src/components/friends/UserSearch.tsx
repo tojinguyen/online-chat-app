@@ -34,7 +34,6 @@ export default function UserSearch({ onSendRequest }: UserSearchProps) {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     if (searchQuery) {
       const timer = setTimeout(() => {
@@ -45,6 +44,7 @@ export default function UserSearch({ onSendRequest }: UserSearchProps) {
     } else {
       setUsers([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, page]);
 
   const handleSendRequest = async (userId: string) => {
@@ -56,11 +56,20 @@ export default function UserSearch({ onSendRequest }: UserSearchProps) {
       } else {
         toast.error(response.message || "Failed to send friend request");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to send friend request:", error);
-      toast.error(
-        error.response?.data?.message || "Failed to send friend request"
-      );
+      if (error instanceof Error) {
+        const errorWithResponse = error as {
+          response?: { data?: { message?: string } };
+        };
+        if (errorWithResponse.response?.data?.message) {
+          toast.error(errorWithResponse.response.data.message);
+        } else {
+          toast.error("Failed to send friend request");
+        }
+      } else {
+        toast.error("Failed to send friend request");
+      }
     }
   };
 
