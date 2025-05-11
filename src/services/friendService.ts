@@ -41,7 +41,7 @@ export const getFriends = async (
 ): Promise<FriendsResponse> => {
   const token = localStorage.getItem("accessToken");
   const response = await axios.get(
-    `${API_URL}/api/v1/friends?page=${page}&limit=${limit}`,
+    `${API_URL}/friends?page=${page}&limit=${limit}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -54,7 +54,7 @@ export const getFriends = async (
 // Get friend requests
 export const getFriendRequests = async (): Promise<FriendRequestsResponse> => {
   const token = localStorage.getItem("accessToken");
-  const response = await axios.get(`${API_URL}/api/v1/friends/requests`, {
+  const response = await axios.get(`${API_URL}/friends/requests`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -68,7 +68,7 @@ export const sendFriendRequest = async (
 ): Promise<ApiResponse> => {
   const token = localStorage.getItem("accessToken");
   const response = await axios.post(
-    `${API_URL}/api/v1/friends/requests`,
+    `${API_URL}/friends/requests`,
     { friendId },
     {
       headers: {
@@ -86,7 +86,7 @@ export const acceptFriendRequest = async (
 ): Promise<ApiResponse> => {
   const token = localStorage.getItem("accessToken");
   const response = await axios.post(
-    `${API_URL}/api/v1/friends/requests/${requestId}/accept`,
+    `${API_URL}/friends/requests/${requestId}/accept`,
     {},
     {
       headers: {
@@ -104,7 +104,7 @@ export const rejectFriendRequest = async (
 ): Promise<ApiResponse> => {
   const token = localStorage.getItem("accessToken");
   const response = await axios.post(
-    `${API_URL}/api/v1/friends/requests/${requestId}/reject`,
+    `${API_URL}/friends/requests/${requestId}/reject`,
     {},
     {
       headers: {
@@ -119,7 +119,7 @@ export const rejectFriendRequest = async (
 // Remove friend
 export const removeFriend = async (friendId: string): Promise<ApiResponse> => {
   const token = localStorage.getItem("accessToken");
-  const response = await axios.delete(`${API_URL}/api/v1/friends/${friendId}`, {
+  const response = await axios.delete(`${API_URL}/friends/${friendId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
