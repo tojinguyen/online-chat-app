@@ -46,6 +46,7 @@ export const getFriends = async (
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      withCredentials: true,
     }
   );
   return response.data;
