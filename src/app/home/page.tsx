@@ -13,6 +13,14 @@ interface Friend extends BaseFriend {
   status: "online" | "offline";
 }
 
+interface Conversation {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+  time?: string;
+  lastMessage?: string;
+}
+
 export default function HomePage() {
   const { user, userDetails, logout } = useAuth();
   const router = useRouter();
@@ -34,23 +42,7 @@ export default function HomePage() {
   const [friendsTotalCount, setFriendsTotalCount] = useState(0);
   const [friendsError, setFriendsError] = useState<string | null>(null);
 
-  // Sample data (to be replaced with actual API calls)
-  const conversations = [
-    {
-      id: "1",
-      name: "Chat Group 1",
-      lastMessage: "Hello there!",
-      time: "10:30 AM",
-      avatarUrl: null,
-    },
-    {
-      id: "2",
-      name: "Chat Group 2",
-      lastMessage: "Meeting at 2pm",
-      time: "09:15 AM",
-      avatarUrl: null,
-    },
-  ];
+  const [conversations] = useState<Conversation[]>([]);
 
   const messages = [
     {
