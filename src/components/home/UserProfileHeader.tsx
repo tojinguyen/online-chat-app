@@ -28,7 +28,7 @@ export default function UserProfileHeader({
             </div>
           )}
         </div>
-        <span className="ml-2 font-semibold text-lg">
+        <span className="ml-2 font-bold text-lg text-black">
           {userDetails?.fullName || user || "User"}
         </span>
       </div>
