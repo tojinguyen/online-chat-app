@@ -21,6 +21,12 @@ export interface FriendsResponse {
   success: boolean;
   message: string;
   data: Friend[];
+  meta?: {
+    page?: number;
+    limit?: number;
+    total_pages?: number;
+    total_count?: number;
+  };
 }
 
 export interface FriendRequestsResponse {
