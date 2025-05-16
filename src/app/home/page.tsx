@@ -1,6 +1,6 @@
 "use client";
 
-import Avatar from "@/components/home/Avatar";
+// Avatar import removed (unused)
 import ChatSection from "@/components/home/ChatSection";
 import ConversationList from "@/components/home/ConversationList";
 import EmptyState from "@/components/home/EmptyState";
@@ -10,13 +10,13 @@ import SearchResults from "@/components/home/SearchResults";
 import TabNavigation from "@/components/home/TabNavigation";
 import UserProfileHeader from "@/components/home/UserProfileHeader";
 import { useAuth } from "@/contexts/auth/AuthContext";
-import { BaseFriend, getFriends, getFriends } from "@/services/friendService";
+import { Friend, getFriends } from "@/services/friendService";
 import { searchUsers, UserItem } from "@/services/profileService";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 // Extended Friend type with status field
-interface Friend extends BaseFriend {
+interface FriendWithStatus extends Friend {
   status: "online" | "offline";
 }
 
@@ -29,7 +29,7 @@ interface Conversation {
 }
 
 export default function HomePage() {
-  const { user, userDetails, logout } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,7 +41,7 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [friends, setFriends] = useState<Friend[]>([]);
+  const [friends, setFriends] = useState<FriendWithStatus[]>([]);
   const [loadingFriends, setLoadingFriends] = useState(false);
   const [friendsPage, setFriendsPage] = useState(1);
   const [friendsLimit] = useState(10);
@@ -194,10 +194,7 @@ export default function HomePage() {
     loadFriends();
   };
 
-  // For backward compatibility until all components are updated
-  const renderAvatar = (name: string, avatarUrl?: string | null) => {
-    return <Avatar name={name} avatarUrl={avatarUrl} />;
-  };
+  // Removed unused renderAvatar function
 
   if (!user) {
     return null;
@@ -206,15 +203,11 @@ export default function HomePage() {
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-sm">
-        <UserProfileHeader
-          user={user}
-          userDetails={userDetails}
-          handleLogout={handleLogout}
-        />
+        <UserProfileHeader onLogout={handleLogout} />
         <SearchBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          handleSearch={handleSearch}
+          onSearch={handleSearch}
         />
         {searchQuery && (
           <SearchResults
@@ -224,8 +217,8 @@ export default function HomePage() {
             totalCount={totalCount}
             currentPage={currentPage}
             totalPages={totalPages}
-            handlePageChange={handlePageChange}
-            handleClearSearch={handleClearSearch}
+            onPageChange={handlePageChange}
+            onClearSearch={handleClearSearch}
           />
         )}
         <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -234,8 +227,7 @@ export default function HomePage() {
             <ConversationList
               conversations={conversations}
               selectedChat={selectedChat}
-              setSelectedChat={setSelectedChat}
-              renderAvatar={renderAvatar}
+              onSelectChat={(id) => setSelectedChat(id)}
             />
           ) : (
             <FriendListSection
@@ -245,11 +237,12 @@ export default function HomePage() {
               friendsTotalCount={friendsTotalCount}
               friendsTotalPages={friendsTotalPages}
               friendsPage={friendsPage}
-              setFriendsPage={setFriendsPage}
-              loadFriends={loadFriends}
+              friendsLimit={friendsLimit}
               selectedChat={selectedChat}
-              setSelectedChat={setSelectedChat}
-              renderAvatar={renderAvatar}
+              onSelectChat={(id) => setSelectedChat(id)}
+              onClearError={() => setFriendsError(null)}
+              onRefresh={loadFriends}
+              onPageChange={handleFriendsPageChange}
             />
           )}
         </div>
@@ -258,16 +251,41 @@ export default function HomePage() {
         {selectedChat ? (
           <ChatSection
             selectedChat={selectedChat}
-            conversations={conversations}
-            friends={friends}
+            chatName={selectedChat ? `Chat ${selectedChat}` : ""}
             messages={messages}
             messageText={messageText}
             setMessageText={setMessageText}
-            handleSendMessage={handleSendMessage}
-            renderAvatar={renderAvatar}
+            onSendMessage={handleSendMessage}
           />
         ) : (
-          <EmptyState setActiveTab={setActiveTab} />
+          <EmptyState
+            icon={
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-10 w-10 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+            }
+            title="No Chat Selected"
+            description="Select a conversation from the list or search for a user to start chatting."
+            actionButton={
+              <button
+                onClick={() => setActiveTab("chats")}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              >
+                Browse Conversations
+              </button>
+            }
+          />
         )}
       </div>
     </div>
