@@ -127,7 +127,13 @@ export default function ChatSection({
                       {message.time}
                     </span>
                   </div>
-                  <p>{message.content}</p>
+                  <p
+                    className={`font-medium text-base ${
+                      message.isMine ? "text-white" : "text-black"
+                    }`}
+                  >
+                    {message.content}
+                  </p>
                 </div>
               </div>
             ))
@@ -139,7 +145,7 @@ export default function ChatSection({
             <input
               type="text"
               placeholder="Type your message..."
-              className="flex-1 border border-gray-200 rounded-l-lg p-2 focus:outline-none focus:border-indigo-300"
+              className="flex-1 border border-gray-200 rounded-l-lg p-2 focus:outline-none focus:border-indigo-300 font-medium text-black placeholder-gray-400"
               value={messageText}
               onChange={(e) => setMessageText(e.target.value)}
               onKeyPress={(e) => {
