@@ -53,11 +53,14 @@ export const searchUsers = async (
     queryParams.append("limit", limit.toString());
 
     // Using Next.js API route as a proxy to avoid CORS issues
-    const response = await axios.get(`/api/users?${queryParams.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await axios.get(
+      `/api/v1/users?${queryParams.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     return response.data;
   } catch (error) {
@@ -81,7 +84,7 @@ export const getUserProfile = async (
     }
 
     // Using Next.js API route as a proxy to avoid CORS issues
-    const response = await axios.get(`/api/users/${userId}`, {
+    const response = await axios.get(`/api/v1/users/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
