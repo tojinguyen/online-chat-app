@@ -1,4 +1,4 @@
-import { AUTH_STORAGE_KEYS } from "@/constants/authConstants";
+import { API_URL, AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import axios from "axios";
 
 // User profile interfaces
@@ -54,7 +54,7 @@ export const searchUsers = async (
 
     // Using Next.js API route as a proxy to avoid CORS issues
     const response = await axios.get(
-      `/api/v1/users?${queryParams.toString()}`,
+      `${API_URL}/users?${queryParams.toString()}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -84,7 +84,7 @@ export const getUserProfile = async (
     }
 
     // Using Next.js API route as a proxy to avoid CORS issues
-    const response = await axios.get(`/api/v1/users/${userId}`, {
+    const response = await axios.get(`${API_URL}/users/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
