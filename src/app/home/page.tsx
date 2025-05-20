@@ -11,7 +11,12 @@ import TabNavigation from "@/components/home/TabNavigation";
 import UserProfileHeader from "@/components/home/UserProfileHeader";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Friend, getFriends } from "@/services/friendService";
-import { getMessages, Message, sendMessage } from "@/services/messageService";
+import {
+  getChatRooms,
+  getMessages,
+  Message,
+  sendMessage,
+} from "@/services/messageService";
 import { searchUsers, UserItem } from "@/services/profileService";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -27,6 +32,7 @@ interface Conversation {
   avatarUrl?: string;
   time?: string;
   lastMessage?: string;
+  unreadCount?: number;
 }
 
 export default function HomePage() {
@@ -55,7 +61,57 @@ export default function HomePage() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [messagesError, setMessagesError] = useState<string | null>(null);
 
-  const [conversations] = useState<Conversation[]>([]);
+  // Chat rooms state
+  const [chatRooms, setChatRooms] = useState<Conversation[]>([]);
+  const [loadingChatRooms, setLoadingChatRooms] = useState(false);
+  const [chatRoomsPage, setChatRoomsPage] = useState(1);
+  const [chatRoomsLimit] = useState(10);
+  const [chatRoomsTotalPages, setChatRoomsTotalPages] = useState(1);
+  // This total count is used for display purposes in the UI when needed
+  const [chatRoomsTotalCount, setChatRoomsTotalCount] = useState(0);
+  const [chatRoomsError, setChatRoomsError] = useState<string | null>(null);
+
+  // Load chat rooms from API
+  const loadChatRooms = async () => {
+    setLoadingChatRooms(true);
+    setChatRoomsError(null);
+    try {
+      const response = await getChatRooms(chatRoomsPage, chatRoomsLimit);
+      if (response.success) {
+        // Convert API ChatRoom objects to Conversation objects for UI
+        const conversationsFromChatRooms: Conversation[] = response.data.map(
+          (chatRoom) => ({
+            id: chatRoom.id,
+            name: chatRoom.name,
+            avatarUrl: chatRoom.avatar_url,
+            time: chatRoom.last_activity_time,
+            lastMessage: chatRoom.last_message,
+            unreadCount: chatRoom.unread_count,
+          })
+        );
+
+        setChatRooms(conversationsFromChatRooms);
+
+        // Set pagination data if available in API response
+        if (response.meta) {
+          setChatRoomsTotalPages(response.meta.total_pages || 1);
+          // Store total count in case we need it for UI display later
+          const totalCount = response.meta.total_count || 0;
+          setChatRoomsTotalCount(totalCount);
+        }
+
+        console.log("Loaded chat rooms:", conversationsFromChatRooms);
+      } else {
+        console.error("Failed to load chat rooms:", response.message);
+        setChatRoomsError(`Failed to load chat rooms: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error loading chat rooms:", error);
+      setChatRoomsError("Error loading chat rooms. Please try again later.");
+    } finally {
+      setLoadingChatRooms(false);
+    }
+  };
 
   // Load friends list from API
   const loadFriends = async () => {
@@ -119,6 +175,7 @@ export default function HomePage() {
     } else {
       // Load friends when the component mounts
       loadFriends();
+      loadChatRooms(); // Load chat rooms when the component mounts
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, router]);
@@ -182,7 +239,7 @@ export default function HomePage() {
 
       if (response.success) {
         // Add the new message to the list
-        setMessages((prevMessages) => [...prevMessages, response.data]);
+        setMessages((prevMessages) => [...prevMessages, response.data.message]);
         setMessageText(""); // Clear input after sending
       } else {
         console.error("Failed to send message:", response.message);
@@ -206,6 +263,11 @@ export default function HomePage() {
   const handleFriendsPageChange = (page: number) => {
     setFriendsPage(page);
     loadFriends();
+  };
+
+  const handleChatRoomsPageChange = (page: number) => {
+    setChatRoomsPage(page);
+    loadChatRooms();
   };
 
   // Removed unused renderAvatar function
@@ -239,9 +301,16 @@ export default function HomePage() {
         <div className="flex-1 overflow-y-auto">
           {activeTab === "chats" ? (
             <ConversationList
-              conversations={conversations}
+              conversations={chatRooms}
               selectedChat={selectedChat}
               onSelectChat={(id) => setSelectedChat(id)}
+              loading={loadingChatRooms}
+              error={chatRoomsError}
+              onRetry={loadChatRooms}
+              onPageChange={handleChatRoomsPageChange}
+              totalPages={chatRoomsTotalPages}
+              currentPage={chatRoomsPage}
+              totalCount={chatRoomsTotalCount}
             />
           ) : (
             <FriendListSection

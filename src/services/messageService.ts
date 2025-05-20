@@ -1,4 +1,6 @@
 // src/services/messageService.ts
+import { API_URL } from "@/constants/authConstants";
+import axios from "axios";
 import { ApiResponse } from "./authService"; // Assuming this type is defined in authService
 
 // Define Message type for the app
@@ -9,6 +11,60 @@ export interface Message {
   content: string;
   time: string;
   isMine: boolean;
+}
+
+// Define ChatRoom type based on the API specification
+export interface ChatRoom {
+  id: string;
+  name: string;
+  avatar_url?: string;
+  last_message?: string;
+  last_activity_time?: string;
+  unread_count?: number;
+}
+
+export interface ChatRoomsResponse {
+  success: boolean;
+  message: string;
+  data: ChatRoom[];
+  meta?: {
+    page?: number;
+    limit?: number;
+    total_pages?: number;
+    total_count?: number;
+  };
+}
+
+// Get all chat rooms for the current user
+export async function getChatRooms(
+  page: number = 1,
+  limit: number = 10
+): Promise<ChatRoomsResponse> {
+  try {
+    const token = localStorage.getItem("accessToken");
+    const response = await axios.get(
+      `${API_URL}/chat-rooms?page=${page}&limit=${limit}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return {
+      success: true,
+      message: "Chat rooms retrieved successfully",
+      data: response.data.data,
+      meta: response.data.meta,
+    };
+  } catch (error) {
+    console.error("Error fetching chat rooms:", error);
+    return {
+      success: false,
+      message: "Failed to fetch chat rooms",
+      data: [],
+    };
+  }
 }
 
 // Get messages for a conversation
@@ -72,7 +128,7 @@ export async function getMessages(
         messages: [],
         total_count: 0,
         page: 1,
-        limit,
+        limit: 20,
       },
     };
   }
@@ -82,16 +138,17 @@ export async function getMessages(
 export async function sendMessage(
   conversationId: string,
   content: string
-): Promise<ApiResponse<Message>> {
+): Promise<ApiResponse<{ message: Message }>> {
   try {
-    // In a real app, this would be a POST request to your API
-    // For demo purposes, create a fake response
+    // In a real app, this would be a fetch call to your API
+    // For demo purposes, generating a fake response
     const delay = (ms: number) =>
       new Promise((resolve) => setTimeout(resolve, ms));
     await delay(300); // Simulate network delay
 
-    const newMessage: Message = {
-      id: `msg_new_${Date.now()}`,
+    // Create mock message
+    const mockMessage: Message = {
+      id: `msg_${Date.now()}`,
       conversationId,
       sender: "You",
       content,
@@ -101,17 +158,42 @@ export async function sendMessage(
       }),
       isMine: true,
     };
+
     return {
       success: true,
       message: "Message sent successfully",
-      data: newMessage,
+      data: {
+        message: mockMessage,
+      },
     };
+
+    /* This would be the actual API call in a real application:
+    const response = await axios.post(
+      `${API_URL}/conversations/${conversationId}/messages`,
+      { content },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    return {
+      success: true,
+      message: "Message sent successfully",
+      data: {
+        message: response.data.message,
+      },
+    };
+    */
   } catch (error) {
     console.error("Error sending message:", error);
     return {
       success: false,
       message: "Failed to send message",
-      data: {} as Message,
+      data: {
+        message: {} as Message,
+      },
     };
   }
 }
