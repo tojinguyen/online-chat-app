@@ -189,6 +189,61 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, user]);
 
+  // Khi currentPage thay đổi (và KHÁC 1), tự động tìm kiếm lại (chuyển trang)
+  useEffect(() => {
+    if (searchQuery && currentPage !== 1) {
+      (async () => {
+        setSearching(true);
+        try {
+          const response = await searchUsers(
+            searchQuery.trim(),
+            currentPage,
+            10
+          );
+          if (response.success) {
+            setSearchResults(response.data.users);
+            const calculatedTotalPages = Math.ceil(
+              response.data.total_count / response.data.limit
+            );
+            setTotalPages(calculatedTotalPages);
+            setTotalCount(response.data.total_count);
+          } else {
+            setSearchResults([]);
+          }
+        } catch {
+          setSearchResults([]);
+        } finally {
+          setSearching(false);
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
+
+  // Khi search mới (submit form), luôn gọi API và reset về trang 1
+  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setCurrentPage(1);
+    setSearching(true);
+    try {
+      const response = await searchUsers(searchQuery.trim(), 1, 10);
+      if (response.success) {
+        setSearchResults(response.data.users);
+        const calculatedTotalPages = Math.ceil(
+          response.data.total_count / response.data.limit
+        );
+        setTotalPages(calculatedTotalPages);
+        setTotalCount(response.data.total_count);
+      } else {
+        setSearchResults([]);
+      }
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
   // Handle friend selection to open a private chat
   const handleFriendSelect = async (friendId: string) => {
     try {
@@ -225,35 +280,6 @@ export default function HomePage() {
       setMessages([]);
     }
   }, [selectedChat]);
-
-  const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setSearching(true);
-
-    try {
-      // Use the updated search users function
-      const response = await searchUsers(searchQuery.trim(), currentPage, 10);
-
-      if (response.success) {
-        setSearchResults(response.data.users);
-        // Calculate total pages based on total_count and limit
-        const calculatedTotalPages = Math.ceil(
-          response.data.total_count / response.data.limit
-        );
-        setTotalPages(calculatedTotalPages);
-        setCurrentPage(response.data.page);
-        setTotalCount(response.data.total_count);
-      } else {
-        console.error("Search failed:", response.message);
-        setSearchResults([]);
-      }
-    } catch (error) {
-      console.error("Search failed:", error);
-      setSearchResults([]);
-    } finally {
-      setSearching(false);
-    }
-  };
 
   const handleLogout = () => {
     logout();

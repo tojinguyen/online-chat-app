@@ -25,7 +25,7 @@ export default function SearchResults({
   if (!searchQuery) return null;
 
   return (
-    <div className="p-4 border-b border-gray-200 bg-white">
+    <div className="p-4 border-b border-gray-200 bg-white max-h-96 overflow-y-auto">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-bold text-gray-800 flex items-center">
           <svg
