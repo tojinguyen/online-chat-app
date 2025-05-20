@@ -11,6 +11,7 @@ import TabNavigation from "@/components/home/TabNavigation";
 import UserProfileHeader from "@/components/home/UserProfileHeader";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Friend, getFriends } from "@/services/friendService";
+import { getMessages, Message, sendMessage } from "@/services/messageService";
 import { searchUsers, UserItem } from "@/services/profileService";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -49,38 +50,12 @@ export default function HomePage() {
   const [friendsTotalCount, setFriendsTotalCount] = useState(0);
   const [friendsError, setFriendsError] = useState<string | null>(null);
 
-  const [conversations] = useState<Conversation[]>([]);
+  // Messages state
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
 
-  const messages = [
-    {
-      id: "1",
-      sender: "You",
-      content: "Hey there!",
-      time: "10:30 AM",
-      isMine: true,
-    },
-    {
-      id: "2",
-      sender: "John Doe",
-      content: "Hi! How are you?",
-      time: "10:31 AM",
-      isMine: false,
-    },
-    {
-      id: "3",
-      sender: "John Doe",
-      content: "What are you doing?",
-      time: "10:32 AM",
-      isMine: false,
-    },
-    {
-      id: "4",
-      sender: "You",
-      content: "Just working on my chat app",
-      time: "10:33 AM",
-      isMine: true,
-    },
-  ];
+  const [conversations] = useState<Conversation[]>([]);
 
   // Load friends list from API
   const loadFriends = async () => {
@@ -116,6 +91,27 @@ export default function HomePage() {
     }
   };
 
+  // Load messages for a chat
+  const loadMessages = async (chatId: string) => {
+    setLoadingMessages(true);
+    setMessagesError(null);
+    try {
+      const response = await getMessages(chatId);
+      if (response.success) {
+        setMessages(response.data.messages);
+        console.log("Loaded messages:", response.data.messages);
+      } else {
+        console.error("Failed to load messages:", response.message);
+        setMessagesError(`Failed to load messages: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error loading messages:", error);
+      setMessagesError("Error loading messages. Please try again later.");
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
   // Redirect if not logged in
   useEffect(() => {
     if (!user) {
@@ -134,6 +130,16 @@ export default function HomePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, user]);
+
+  // Load messages when a chat is selected
+  useEffect(() => {
+    if (selectedChat) {
+      loadMessages(selectedChat);
+    } else {
+      // Clear messages when no chat is selected
+      setMessages([]);
+    }
+  }, [selectedChat]);
 
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -169,11 +175,19 @@ export default function HomePage() {
     router.push("/auth");
   };
 
-  const handleSendMessage = () => {
-    if (messageText.trim()) {
-      // Here you would typically send the message to your backend
-      console.log("Sending message:", messageText);
-      setMessageText(""); // Clear input after sending
+  const handleSendMessage = async () => {
+    if (messageText.trim() && selectedChat) {
+      // Call the API to send the message
+      const response = await sendMessage(selectedChat, messageText);
+
+      if (response.success) {
+        // Add the new message to the list
+        setMessages((prevMessages) => [...prevMessages, response.data]);
+        setMessageText(""); // Clear input after sending
+      } else {
+        console.error("Failed to send message:", response.message);
+        // Optionally show an error toast here
+      }
     }
   };
 
@@ -256,6 +270,8 @@ export default function HomePage() {
             messageText={messageText}
             setMessageText={setMessageText}
             onSendMessage={handleSendMessage}
+            isLoading={loadingMessages}
+            error={messagesError}
           />
         ) : (
           <EmptyState
