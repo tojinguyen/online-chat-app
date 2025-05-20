@@ -14,6 +14,7 @@ import { Friend, getFriends } from "@/services/friendService";
 import {
   getChatRooms,
   getMessages,
+  getPrivateChatRoom,
   Message,
   sendMessage,
 } from "@/services/messageService";
@@ -188,6 +189,33 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, user]);
 
+  // Handle friend selection to open a private chat
+  const handleFriendSelect = async (friendId: string) => {
+    try {
+      // Get or create private chat room with this friend
+      const response = await getPrivateChatRoom(friendId);
+
+      if (response.success) {
+        const chatRoom = response.data.chatRoom;
+
+        // Switch to chats tab
+        setActiveTab("chats");
+
+        // Select the chat
+        setSelectedChat(chatRoom.id);
+
+        // Load chat rooms to refresh the list
+        loadChatRooms();
+      } else {
+        console.error("Failed to get private chat room:", response.message);
+        // You can show an error message here
+      }
+    } catch (error) {
+      console.error("Error selecting friend for chat:", error);
+      // You can show an error message here
+    }
+  };
+
   // Load messages when a chat is selected
   useEffect(() => {
     if (selectedChat) {
@@ -322,7 +350,7 @@ export default function HomePage() {
               friendsPage={friendsPage}
               friendsLimit={friendsLimit}
               selectedChat={selectedChat}
-              onSelectChat={(id) => setSelectedChat(id)}
+              onSelectChat={handleFriendSelect}
               onClearError={() => setFriendsError(null)}
               onRefresh={loadFriends}
               onPageChange={handleFriendsPageChange}

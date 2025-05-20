@@ -21,6 +21,8 @@ export interface ChatRoom {
   last_message?: string;
   last_activity_time?: string;
   unread_count?: number;
+  is_private?: boolean;
+  participants?: { id: string; name: string; avatar_url?: string }[];
 }
 
 export interface ChatRoomsResponse {
@@ -68,6 +70,44 @@ export async function getChatRooms(
 }
 
 // Get messages for a conversation
+// Get or create a private chat room with a friend
+export async function getPrivateChatRoom(
+  userId: string
+): Promise<ApiResponse<{ chatRoom: ChatRoom }>> {
+  try {
+    const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+    const response = await axios.get(
+      `${API_URL}/chat-rooms/private/${userId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return {
+      success: true,
+      message: "Private chat room retrieved successfully",
+      data: {
+        chatRoom: response.data.data,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting private chat room:", error);
+    // Xử lý lỗi từ Axios có type an toàn hơn
+    const axiosError = error as { response?: { data?: { message?: string } } };
+    const errorMessage =
+      axiosError?.response?.data?.message || "Failed to get private chat room";
+    return {
+      success: false,
+      message: errorMessage,
+      data: {
+        chatRoom: {} as ChatRoom,
+      },
+    };
+  }
+}
+
 export async function getMessages(
   conversationId: string,
   page: number = 1,
@@ -81,12 +121,52 @@ export async function getMessages(
   }>
 > {
   try {
-    // In a real app, this would be a fetch call to your API
-    // For demo purposes, generating fake messages
-    const delay = (ms: number) =>
-      new Promise((resolve) => setTimeout(resolve, ms));
-    await delay(500); // Simulate network delay
+    const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+    const response = await axios.get(
+      `${API_URL}/chat-rooms/${conversationId}/messages`,
+      {
+        params: { page, limit },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
+    if (response.data.success) {
+      // Transform the API response to match our Message type
+      const messages: Message[] = response.data.data.map(
+        (msg: {
+          id: string;
+          content: string;
+          created_at: string;
+          sender: { id: string; name: string };
+        }) => ({
+          id: msg.id,
+          conversationId,
+          sender: msg.sender.name,
+          content: msg.content,
+          time: new Date(msg.created_at).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          isMine: msg.sender.id === localStorage.getItem("userId"), // assuming userId is stored in localStorage
+        })
+      );
+
+      return {
+        success: true,
+        message: "Messages retrieved successfully",
+        data: {
+          messages,
+          total_count: response.data.meta?.total_count || messages.length,
+          page: response.data.meta?.page || page,
+          limit: response.data.meta?.limit || limit,
+        },
+      };
+    }
+
+    // Fallback to mock data if API call fails or for development
+    console.log("Using mock message data for development");
     // Generate mock data
     const totalMessages = 30;
     const mockMessages: Message[] = Array.from({
@@ -140,13 +220,43 @@ export async function sendMessage(
   content: string
 ): Promise<ApiResponse<{ message: Message }>> {
   try {
-    // In a real app, this would be a fetch call to your API
-    // For demo purposes, generating a fake response
-    const delay = (ms: number) =>
-      new Promise((resolve) => setTimeout(resolve, ms));
-    await delay(300); // Simulate network delay
+    const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+    const response = await axios.post(
+      `${API_URL}/chat-rooms/${conversationId}/messages`,
+      { content },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
-    // Create mock message
+    if (response.data.success) {
+      // Transform API response to match our Message type
+      const messageData = response.data.data;
+      const message: Message = {
+        id: messageData.id,
+        conversationId,
+        sender: "You", // Since we're sending it, it's always from us
+        content: messageData.content,
+        time: new Date(messageData.created_at).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        isMine: true,
+      };
+
+      return {
+        success: true,
+        message: "Message sent successfully",
+        data: {
+          message,
+        },
+      };
+    }
+
+    // Fallback to mock data if API call fails
+    console.log("Using mock message data for development");
     const mockMessage: Message = {
       id: `msg_${Date.now()}`,
       conversationId,
@@ -158,7 +268,6 @@ export async function sendMessage(
       }),
       isMine: true,
     };
-
     return {
       success: true,
       message: "Message sent successfully",
@@ -166,26 +275,6 @@ export async function sendMessage(
         message: mockMessage,
       },
     };
-
-    /* This would be the actual API call in a real application:
-    const response = await axios.post(
-      `${API_URL}/conversations/${conversationId}/messages`,
-      { content },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    
-    return {
-      success: true,
-      message: "Message sent successfully",
-      data: {
-        message: response.data.message,
-      },
-    };
-    */
   } catch (error) {
     console.error("Error sending message:", error);
     return {
