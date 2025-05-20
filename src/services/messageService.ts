@@ -1,5 +1,5 @@
 // src/services/messageService.ts
-import { API_URL } from "@/constants/authConstants";
+import { API_URL, AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import axios from "axios";
 import { ApiResponse } from "./authService"; // Assuming this type is defined in authService
 
@@ -41,15 +41,15 @@ export async function getChatRooms(
   limit: number = 10
 ): Promise<ChatRoomsResponse> {
   try {
-    const token = localStorage.getItem("accessToken");
-    const response = await axios.get(
-      `${API_URL}/chat-rooms?page=${page}&limit=${limit}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    console.log("Fetching chat rooms...");
+    console.log("Page:", page);
+    console.log("Limit:", limit);
+    const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+    const response = await axios.get(`${API_URL}/chat-rooms`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     return {
       success: true,

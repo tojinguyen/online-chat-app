@@ -1,4 +1,4 @@
-import { API_URL } from "@/constants/authConstants";
+import { API_URL, AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import axios from "axios";
 
 export interface Friend {
@@ -45,7 +45,7 @@ export const getFriends = async (
   page: number,
   limit: number
 ): Promise<FriendsResponse> => {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
   const response = await axios.get(
     `${API_URL}/friends?page=${page}&limit=${limit}`,
     {
@@ -60,7 +60,7 @@ export const getFriends = async (
 
 // Get friend requests
 export const getFriendRequests = async (): Promise<FriendRequestsResponse> => {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
   const response = await axios.get(`${API_URL}/friends/requests`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -73,7 +73,7 @@ export const getFriendRequests = async (): Promise<FriendRequestsResponse> => {
 export const sendFriendRequest = async (
   friendId: string
 ): Promise<ApiResponse> => {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
   const response = await axios.post(
     `${API_URL}/friends/requests`,
     { friendId },
@@ -91,7 +91,7 @@ export const sendFriendRequest = async (
 export const acceptFriendRequest = async (
   requestId: string
 ): Promise<ApiResponse> => {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
   const response = await axios.post(
     `${API_URL}/friends/requests/${requestId}/accept`,
     {},
@@ -109,7 +109,7 @@ export const acceptFriendRequest = async (
 export const rejectFriendRequest = async (
   requestId: string
 ): Promise<ApiResponse> => {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
   const response = await axios.post(
     `${API_URL}/friends/requests/${requestId}/reject`,
     {},
@@ -125,7 +125,7 @@ export const rejectFriendRequest = async (
 
 // Remove friend
 export const removeFriend = async (friendId: string): Promise<ApiResponse> => {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
   const response = await axios.delete(`${API_URL}/friends/${friendId}`, {
     headers: {
       Authorization: `Bearer ${token}`,

@@ -1,3 +1,4 @@
+import { AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import axios from "axios";
 
 // User profile interfaces
@@ -40,7 +41,7 @@ export const searchUsers = async (
   limit: number = 10
 ): Promise<ApiResponseWithData<SearchUsersOutput>> => {
   try {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
     if (!token) {
       throw new Error("Authentication required");
     }
@@ -52,14 +53,11 @@ export const searchUsers = async (
     queryParams.append("limit", limit.toString());
 
     // Using Next.js API route as a proxy to avoid CORS issues
-    const response = await axios.get(
-      `/api/proxy/users?${queryParams.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.get(`/api/users?${queryParams.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
     return response.data;
   } catch (error) {
@@ -77,13 +75,13 @@ export const getUserProfile = async (
   userId: string
 ): Promise<ApiResponseWithData<ProfileResponse>> => {
   try {
-    const token = localStorage.getItem("accessToken");
+    const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
     if (!token) {
       throw new Error("Authentication required");
     }
 
     // Using Next.js API route as a proxy to avoid CORS issues
-    const response = await axios.get(`/api/proxy/users/${userId}`, {
+    const response = await axios.get(`/api/users/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
