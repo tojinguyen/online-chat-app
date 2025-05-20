@@ -147,6 +147,10 @@ export default function ChatSection({
                   onSendMessage();
                 }
               }}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
             />
             <button
               onClick={onSendMessage}
