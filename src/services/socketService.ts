@@ -1,5 +1,4 @@
 import { API_URL, AUTH_STORAGE_KEYS } from "@/constants/authConstants";
-import { io, Socket } from "socket.io-client";
 
 // Define event types for socket communication
 export interface SocketMessage {
@@ -25,7 +24,7 @@ type TypingHandler = (data: {
 type ConnectionStatusHandler = (status: ConnectionStatus) => void;
 
 class SocketService {
-  private socket: Socket | null = null;
+  private socket: WebSocket | null = null;
   private messageHandlers: MessageHandler[] = [];
   private statusChangeHandlers: StatusChangeHandler[] = [];
   private typingHandlers: TypingHandler[] = [];
@@ -35,6 +34,7 @@ class SocketService {
   private maxReconnectAttempts = 5;
   private reconnectInterval = 3000; // 3 seconds
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private pingInterval: ReturnType<typeof setInterval> | null = null;
 
   // Connect to the WebSocket server
   connect(): void {
@@ -57,15 +57,22 @@ class SocketService {
 
       this.updateConnectionStatus("connecting");
 
-      // Create a new socket connection with the websocket path and authentication
-      this.socket = io(`${API_URL}`, {
-        path: "/ws",
-        auth: {
-          token,
-        },
-        transports: ["websocket"],
-        reconnection: false, // We'll handle reconnection manually
-      });
+      // Format WebSocket URL (ws:// or wss://)
+      const wsProtocol = API_URL.startsWith("https") ? "wss" : "ws";
+      const baseUrl = API_URL.replace(/^https?:\/\//, "").replace(
+        "/api/v1",
+        ""
+      );
+      // Không thể trực tiếp thêm Authorization header trong WebSocket
+      // Sử dụng URL query parameter có tên 'token' để chuyển token này
+      const wsUrl = `${wsProtocol}://${baseUrl}/api/v1/ws?token=${encodeURIComponent(
+        token
+      )}`;
+
+      console.log("Connecting to WebSocket server at:", wsUrl);
+
+      // Create a new WebSocket connection
+      this.socket = new WebSocket(wsUrl);
 
       // Set up event listeners
       this.setupEventListeners();
@@ -80,58 +87,97 @@ class SocketService {
     if (!this.socket) return;
 
     // Connection established successfully
-    this.socket.on("connect", () => {
+    this.socket.onopen = () => {
       console.log("WebSocket connected successfully");
       this.reconnectAttempts = 0;
       this.updateConnectionStatus("connected");
-    });
+
+      // Set up ping interval to keep connection alive
+      this.setupPingInterval();
+    };
 
     // Connection error
-    this.socket.on("connect_error", (error) => {
-      console.error("WebSocket connection error:", error);
+    this.socket.onerror = (event) => {
+      console.error("WebSocket connection error:", event);
       this.handleConnectionError();
-    });
+    };
 
     // Disconnected from server
-    this.socket.on("disconnect", (reason) => {
-      console.log("WebSocket disconnected:", reason);
+    this.socket.onclose = (event) => {
+      console.log("WebSocket disconnected:", event.reason);
       this.updateConnectionStatus("disconnected");
 
+      // Clear ping interval
+      if (this.pingInterval) {
+        clearInterval(this.pingInterval);
+        this.pingInterval = null;
+      }
+
       // Attempt reconnection if not client-initiated disconnect
-      if (reason !== "io client disconnect") {
+      if (event.code !== 1000) {
         this.attemptReconnect();
       }
-    });
+    };
 
-    // New message received
-    this.socket.on("message", (data: SocketMessage) => {
-      console.log("New message received:", data);
-      this.messageHandlers.forEach((handler) => handler(data));
-    });
+    // Message received
+    this.socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
 
-    // User status change (online/offline)
-    this.socket.on(
-      "status_change",
-      (data: { userId: string; status: string }) => {
-        console.log("User status changed:", data);
-        this.statusChangeHandlers.forEach((handler) =>
-          handler(data.status, data.userId)
-        );
+        // Handle different message types
+        switch (data.type) {
+          case "message":
+            console.log("New message received:", data.payload);
+            this.messageHandlers.forEach((handler) => handler(data.payload));
+            break;
+          case "status_change":
+            console.log("User status changed:", data.payload);
+            this.statusChangeHandlers.forEach((handler) =>
+              handler(data.payload.status, data.payload.userId)
+            );
+            break;
+          case "typing":
+            this.typingHandlers.forEach((handler) => handler(data.payload));
+            break;
+          case "error":
+            console.error("Server error:", data.payload);
+            break;
+          case "pong":
+            // Handle pong message (keep-alive response)
+            break;
+          default:
+            console.log("Unknown message type received:", data);
+        }
+      } catch (error) {
+        console.error("Error parsing WebSocket message:", error, event.data);
       }
-    );
+    };
+  }
 
-    // Typing indicator
-    this.socket.on(
-      "typing",
-      (data: { conversationId: string; userId: string; isTyping: boolean }) => {
-        this.typingHandlers.forEach((handler) => handler(data));
+  // Set up ping interval to keep connection alive
+  private setupPingInterval(): void {
+    // Clear existing interval if any
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+    }
+
+    // Send ping every 30 seconds to keep the connection alive
+    this.pingInterval = setInterval(() => {
+      if (this.isConnected()) {
+        this.sendRaw({ type: "ping" });
       }
-    );
+    }, 30000);
+  }
 
-    // Error messages from server
-    this.socket.on("error", (error: unknown) => {
-      console.error("Server error:", error);
-    });
+  // Helper function to send raw data through WebSocket
+  private sendRaw(data: Record<string, unknown>): void {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+
+    try {
+      this.socket.send(JSON.stringify(data));
+    } catch (error) {
+      console.error("Error sending data:", error);
+    }
   }
 
   // Handle connection errors
@@ -170,7 +216,7 @@ class SocketService {
   // Disconnect from the WebSocket server
   disconnect(): void {
     if (this.socket) {
-      this.socket.disconnect();
+      this.socket.close(1000, "Client initiated disconnect");
       this.socket = null;
       this.updateConnectionStatus("disconnected");
     }
@@ -179,51 +225,68 @@ class SocketService {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
+
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
   }
 
   // Send a chat message
   sendMessage(conversationId: string, content: string): void {
-    if (!this.socket || !this.isConnected()) {
+    if (!this.isConnected()) {
       console.error("Cannot send message: Socket not connected");
       return;
     }
 
-    this.socket.emit("message", {
-      conversationId,
-      content,
+    this.sendRaw({
+      type: "message",
+      payload: {
+        conversationId,
+        content,
+      },
     });
   }
 
   // Send typing indicator
   sendTypingStatus(conversationId: string, isTyping: boolean): void {
-    if (!this.socket || !this.isConnected()) return;
+    if (!this.isConnected()) return;
 
-    this.socket.emit("typing", {
-      conversationId,
-      isTyping,
+    this.sendRaw({
+      type: "typing",
+      payload: {
+        conversationId,
+        isTyping,
+      },
     });
   }
 
   // Join a specific chat room
   joinChatRoom(conversationId: string): void {
-    if (!this.socket || !this.isConnected()) {
+    if (!this.isConnected()) {
       console.error("Cannot join room: Socket not connected");
       return;
     }
 
-    this.socket.emit("join_room", { conversationId });
+    this.sendRaw({
+      type: "join_room",
+      payload: { conversationId },
+    });
   }
 
   // Leave a specific chat room
   leaveChatRoom(conversationId: string): void {
-    if (!this.socket || !this.isConnected()) return;
+    if (!this.isConnected()) return;
 
-    this.socket.emit("leave_room", { conversationId });
+    this.sendRaw({
+      type: "leave_room",
+      payload: { conversationId },
+    });
   }
 
   // Check if socket is connected
   isConnected(): boolean {
-    return !!this.socket?.connected;
+    return this.socket !== null && this.socket.readyState === WebSocket.OPEN;
   }
 
   // Get current connection status
