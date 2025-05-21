@@ -1,11 +1,12 @@
+import { useSocket } from "@/hooks/useSocket";
+import { Message } from "@/services/messageService";
+import { useEffect, useState } from "react";
+import OnlineStatus from "../common/OnlineStatus";
 import Avatar from "./Avatar";
 
-interface Message {
-  id: string;
-  sender: string;
-  content: string;
-  time: string;
-  isMine: boolean;
+// Define a typing extension for the window object
+interface WindowWithTypingTimer extends Window {
+  typingTimeout?: NodeJS.Timeout;
 }
 
 interface ChatSectionProps {
@@ -24,13 +25,48 @@ export default function ChatSection({
   selectedChat,
   chatName,
   chatAvatarUrl,
-  messages,
+  messages: initialMessages,
   messageText,
   setMessageText,
   onSendMessage,
   isLoading = false,
-  error = null,
+  error: initialError = null,
 }: ChatSectionProps) {
+  // State to combine initial and socket messages
+  const [allMessages, setAllMessages] = useState<Message[]>(initialMessages);
+  const [error, setError] = useState<string | null>(initialError);
+
+  // Connect to socket for real-time updates when chat is selected
+  const {
+    messages: socketMessages,
+    connectionStatus,
+    typingUsers,
+    sendTypingStatus,
+  } = useSocket(selectedChat || undefined);
+
+  // Combine API-loaded messages with real-time socket messages
+  useEffect(() => {
+    setAllMessages([...initialMessages, ...socketMessages]);
+  }, [initialMessages, socketMessages]);
+
+  // Update error state when props change
+  useEffect(() => {
+    setError(initialError);
+  }, [initialError]);
+
+  // Handle typing indicator
+  useEffect(() => {
+    // Cleanup function
+    return () => {
+      if (selectedChat) sendTypingStatus(false);
+    };
+  }, [selectedChat, sendTypingStatus]);
+
+  // Display connection status indicator
+  const getConnectionStatusIcon = () => {
+    return <OnlineStatus status={connectionStatus} size="sm" />;
+  };
+
   if (!selectedChat) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-10 text-center">
@@ -61,6 +97,11 @@ export default function ChatSection({
     );
   }
 
+  // Get typing indicators for this conversation
+  const isAnyoneTyping = Object.values(typingUsers).some(
+    (isTyping) => isTyping
+  );
+
   return (
     <>
       <div className="border-b border-gray-200 bg-white shadow-sm">
@@ -69,10 +110,21 @@ export default function ChatSection({
             <Avatar name={chatName || "Chat"} avatarUrl={chatAvatarUrl} />
           </div>
           <div className="ml-3">
-            <h3 className="font-semibold text-gray-800">
-              {chatName || "Chat"}
-            </h3>
-            <p className="text-xs text-gray-500">Online</p>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-gray-800">
+                {chatName || "Chat"}
+              </h3>
+              {getConnectionStatusIcon()}
+            </div>
+            <p className="text-xs text-gray-500">
+              {connectionStatus === "connected"
+                ? isAnyoneTyping
+                  ? "Typing..."
+                  : "Online"
+                : connectionStatus === "connecting"
+                ? "Connecting..."
+                : "Offline"}
+            </p>
           </div>
         </div>
       </div>
@@ -87,12 +139,12 @@ export default function ChatSection({
             <div className="flex justify-center items-center h-full text-red-500">
               <p>{error}</p>
             </div>
-          ) : messages.length === 0 ? (
+          ) : allMessages.length === 0 ? (
             <div className="flex justify-center items-center h-full text-gray-500">
               <p>No messages yet. Start a conversation!</p>
             </div>
           ) : (
-            messages.map((message) => (
+            allMessages.map((message) => (
               <div
                 key={message.id}
                 className={`flex mb-4 ${
@@ -147,10 +199,39 @@ export default function ChatSection({
               placeholder="Type your message..."
               className="flex-1 border border-gray-200 rounded-l-lg p-2 focus:outline-none focus:border-indigo-300 font-medium text-black placeholder-gray-400"
               value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
+              onChange={(e) => {
+                setMessageText(e.target.value);
+                // Trigger typing indicator when user types
+                if (selectedChat) {
+                  // Use debounce technique to manage typing status
+                  const handleTyping = () => {
+                    sendTypingStatus(true);
+
+                    // Create a timeout to set typing status to false after inactivity
+                    const typingTimer = setTimeout(() => {
+                      sendTypingStatus(false);
+                    }, 2000);
+
+                    // Clear previous timeout if it exists on window object
+                    if ((window as WindowWithTypingTimer).typingTimeout) {
+                      clearTimeout(
+                        (window as WindowWithTypingTimer).typingTimeout
+                      );
+                    }
+
+                    // Store the new timeout on window object
+                    (window as WindowWithTypingTimer).typingTimeout =
+                      typingTimer;
+                  };
+
+                  handleTyping();
+                }
+              }}
               onKeyPress={(e) => {
                 if (e.key === "Enter") {
                   onSendMessage();
+                  // Stop typing indicator when message is sent
+                  sendTypingStatus(false);
                 }
               }}
               autoComplete="off"
@@ -159,7 +240,11 @@ export default function ChatSection({
               spellCheck="false"
             />
             <button
-              onClick={onSendMessage}
+              onClick={() => {
+                onSendMessage();
+                // Stop typing indicator when message is sent
+                sendTypingStatus(false);
+              }}
               className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-r-lg p-2 px-4 transition-colors"
               disabled={!messageText.trim()}
             >

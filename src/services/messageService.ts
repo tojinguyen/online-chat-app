@@ -246,6 +246,9 @@ export async function sendMessage(
         isMine: true,
       };
 
+      // Note: We don't need to emit via socket here since the server will broadcast
+      // the message back to all clients including the sender after receiving HTTP request
+
       return {
         success: true,
         message: "Message sent successfully",

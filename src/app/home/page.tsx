@@ -19,6 +19,7 @@ import {
   sendMessage,
 } from "@/services/messageService";
 import { searchUsers, UserItem } from "@/services/profileService";
+import socketService from "@/services/socketService";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -169,6 +170,19 @@ export default function HomePage() {
     }
   };
 
+  // Initialize and clean up socket connection when user logs in/out
+  useEffect(() => {
+    if (user) {
+      // Initialize socket connection when component mounts and user is logged in
+      socketService.connect();
+    }
+
+    // Clean up socket connection when component unmounts
+    return () => {
+      socketService.disconnect();
+    };
+  }, [user]);
+
   // Redirect if not logged in
   useEffect(() => {
     if (!user) {
@@ -282,22 +296,32 @@ export default function HomePage() {
   }, [selectedChat]);
 
   const handleLogout = () => {
+    // Disconnect WebSocket before logging out
+    socketService.disconnect();
     logout();
     router.push("/auth");
   };
 
   const handleSendMessage = async () => {
     if (messageText.trim() && selectedChat) {
-      // Call the API to send the message
-      const response = await sendMessage(selectedChat, messageText);
+      try {
+        // Call the API to send the message
+        const response = await sendMessage(selectedChat, messageText);
 
-      if (response.success) {
-        // Add the new message to the list
-        setMessages((prevMessages) => [...prevMessages, response.data.message]);
-        setMessageText(""); // Clear input after sending
-      } else {
-        console.error("Failed to send message:", response.message);
-        // Optionally show an error toast here
+        if (response.success) {
+          // Add the new message to the list
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            response.data.message,
+          ]);
+          setMessageText(""); // Clear input after sending
+        } else {
+          console.error("Failed to send message:", response.message);
+          // Optionally show an error toast here
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
+        setMessagesError("Failed to send message. Please try again.");
       }
     }
   };

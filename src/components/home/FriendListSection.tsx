@@ -1,4 +1,7 @@
 import { Friend as BaseFriend } from "@/services/friendService";
+import socketService from "@/services/socketService";
+import { useEffect, useState } from "react";
+import OnlineStatus from "../common/OnlineStatus";
 import Avatar from "./Avatar";
 
 // Extended Friend type with status field
@@ -35,6 +38,32 @@ export default function FriendListSection({
   friendsLimit,
   onPageChange,
 }: FriendListSectionProps) {
+  // Keep track of real-time status updates
+  const [friendStatuses, setFriendStatuses] = useState<Record<string, string>>(
+    {}
+  );
+
+  // Listen for status changes from socket
+  useEffect(() => {
+    // Set up listener for status changes
+    const unsubscribe = socketService.onStatusChange((status, userId) => {
+      setFriendStatuses((prev) => ({
+        ...prev,
+        [userId]: status,
+      }));
+    });
+
+    // Clean up on unmount
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // Get the most current status (combines initial status with real-time updates)
+  const getFriendStatus = (friend: Friend) => {
+    return friendStatuses[friend.id] || friend.status;
+  };
+
   if (loadingFriends) {
     return (
       <div className="flex flex-col items-center justify-center py-10">
@@ -155,15 +184,17 @@ export default function FriendListSection({
             }`}
             onClick={() => onSelectChat(friend.id)}
           >
+            {" "}
             <div className="relative">
               <div className="w-12 h-12 rounded-full overflow-hidden shadow-sm">
                 <Avatar name={friend.name} avatarUrl={friend.avatar_url} />
+              </div>{" "}
+              <div className="absolute bottom-0 right-0">
+                <OnlineStatus
+                  status={getFriendStatus(friend) as "online" | "offline"}
+                  size="sm"
+                />
               </div>
-              <span
-                className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
-                  friend.status === "online" ? "bg-green-500" : "bg-gray-400"
-                }`}
-              ></span>
             </div>
             <div className="ml-3 flex-1">
               <div className="flex items-center justify-between">
@@ -188,7 +219,7 @@ export default function FriendListSection({
                     : "text-gray-600"
                 } capitalize mt-1`}
               >
-                {friend.status}
+                {getFriendStatus(friend)}
               </p>
             </div>
           </div>
