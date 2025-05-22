@@ -1,5 +1,23 @@
 import { API_URL, AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 
+// Define socket message types
+export enum SocketMessageType {
+  // Client messages
+  CHAT = "CHAT", // Send chat message
+  JOIN = "JOIN", // Join chat room
+  LEAVE = "LEAVE", // Leave chat room
+  TYPING = "TYPING", // Typing indicator
+  READ_RECEIPT = "READ_RECEIPT", // Mark as read
+
+  // Server messages
+  USERS = "USERS", // User list
+  JOIN_SUCCESS = "JOIN_SUCCESS", // Join room success
+  JOIN_ERROR = "JOIN_ERROR", // Join room error
+  USER_JOINED = "USER_JOINED", // User joined notification
+  USER_LEFT = "USER_LEFT", // User left notification
+  ERROR = "ERROR", // Error notification
+}
+
 // Define event types for socket communication
 export interface SocketMessage {
   conversationId: string;
@@ -8,6 +26,13 @@ export interface SocketMessage {
   senderId: string;
   senderName: string;
   timestamp: string;
+}
+
+// User data interface
+export interface UserInfo {
+  id: string;
+  name: string;
+  status: string;
 }
 
 // Status types for connection state
@@ -22,6 +47,18 @@ type TypingHandler = (data: {
   isTyping: boolean;
 }) => void;
 type ConnectionStatusHandler = (status: ConnectionStatus) => void;
+type UsersListHandler = (users: UserInfo[]) => void;
+type JoinRoomHandler = (
+  status: boolean,
+  message: string,
+  roomId?: string
+) => void;
+type UserJoinLeaveHandler = (userId: string, conversationId: string) => void;
+type ReadReceiptHandler = (data: {
+  conversationId: string;
+  messageId: string;
+  userId: string;
+}) => void;
 
 class SocketService {
   private socket: WebSocket | null = null;
@@ -29,6 +66,10 @@ class SocketService {
   private statusChangeHandlers: StatusChangeHandler[] = [];
   private typingHandlers: TypingHandler[] = [];
   private connectionStatusHandlers: ConnectionStatusHandler[] = [];
+  private usersListHandlers: UsersListHandler[] = [];
+  private joinRoomHandlers: JoinRoomHandler[] = [];
+  private userJoinLeaveHandlers: UserJoinLeaveHandler[] = [];
+  private readReceiptHandlers: ReadReceiptHandler[] = [];
   private connectionStatus: ConnectionStatus = "disconnected";
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
@@ -126,25 +167,70 @@ class SocketService {
 
         // Handle different message types
         switch (data.type) {
-          case "message":
+          case SocketMessageType.CHAT:
             console.log("New message received:", data.payload);
             this.messageHandlers.forEach((handler) => handler(data.payload));
             break;
-          case "status_change":
+
+          case "status_change": // Legacy support
             console.log("User status changed:", data.payload);
             this.statusChangeHandlers.forEach((handler) =>
               handler(data.payload.status, data.payload.userId)
             );
             break;
-          case "typing":
+
+          case SocketMessageType.TYPING:
             this.typingHandlers.forEach((handler) => handler(data.payload));
             break;
-          case "error":
+
+          case SocketMessageType.ERROR:
             console.error("Server error:", data.payload);
             break;
-          case "pong":
+
+          case "pong": // Legacy ping/pong
             // Handle pong message (keep-alive response)
             break;
+
+          case SocketMessageType.USERS:
+            console.log("Users list received:", data.payload);
+            this.usersListHandlers.forEach((handler) => handler(data.payload));
+            break;
+
+          case SocketMessageType.JOIN_SUCCESS:
+            console.log("Join room success:", data.payload);
+            this.joinRoomHandlers.forEach((handler) =>
+              handler(true, "Join room success", data.payload.conversationId)
+            );
+            break;
+
+          case SocketMessageType.JOIN_ERROR:
+            console.error("Join room error:", data.payload);
+            this.joinRoomHandlers.forEach((handler) =>
+              handler(false, data.payload.message || "Join room error")
+            );
+            break;
+
+          case SocketMessageType.USER_JOINED:
+            console.log("User joined:", data.payload);
+            this.userJoinLeaveHandlers.forEach((handler) =>
+              handler(data.payload.userId, data.payload.conversationId)
+            );
+            break;
+
+          case SocketMessageType.USER_LEFT:
+            console.log("User left:", data.payload);
+            this.userJoinLeaveHandlers.forEach((handler) =>
+              handler(data.payload.userId, data.payload.conversationId)
+            );
+            break;
+
+          case SocketMessageType.READ_RECEIPT:
+            console.log("Read receipt:", data.payload);
+            this.readReceiptHandlers.forEach((handler) =>
+              handler(data.payload)
+            );
+            break;
+
           default:
             console.log("Unknown message type received:", data);
         }
@@ -232,6 +318,16 @@ class SocketService {
     }
   }
 
+  // Check if socket is connected
+  isConnected(): boolean {
+    return this.socket !== null && this.socket.readyState === WebSocket.OPEN;
+  }
+
+  // Get current connection status
+  getConnectionStatus(): ConnectionStatus {
+    return this.connectionStatus;
+  }
+
   // Send a chat message
   sendMessage(conversationId: string, content: string): void {
     if (!this.isConnected()) {
@@ -240,7 +336,7 @@ class SocketService {
     }
 
     this.sendRaw({
-      type: "message",
+      type: SocketMessageType.CHAT,
       payload: {
         conversationId,
         content,
@@ -253,7 +349,7 @@ class SocketService {
     if (!this.isConnected()) return;
 
     this.sendRaw({
-      type: "typing",
+      type: SocketMessageType.TYPING,
       payload: {
         conversationId,
         isTyping,
@@ -269,7 +365,7 @@ class SocketService {
     }
 
     this.sendRaw({
-      type: "join_room",
+      type: SocketMessageType.JOIN,
       payload: { conversationId },
     });
   }
@@ -279,19 +375,22 @@ class SocketService {
     if (!this.isConnected()) return;
 
     this.sendRaw({
-      type: "leave_room",
+      type: SocketMessageType.LEAVE,
       payload: { conversationId },
     });
   }
 
-  // Check if socket is connected
-  isConnected(): boolean {
-    return this.socket !== null && this.socket.readyState === WebSocket.OPEN;
-  }
+  // Send read receipt
+  sendReadReceipt(conversationId: string, messageId: string): void {
+    if (!this.isConnected()) return;
 
-  // Get current connection status
-  getConnectionStatus(): ConnectionStatus {
-    return this.connectionStatus;
+    this.sendRaw({
+      type: SocketMessageType.READ_RECEIPT,
+      payload: {
+        conversationId,
+        messageId,
+      },
+    });
   }
 
   // Event listeners
@@ -322,6 +421,42 @@ class SocketService {
     this.connectionStatusHandlers.push(handler);
     return () => {
       this.connectionStatusHandlers = this.connectionStatusHandlers.filter(
+        (h) => h !== handler
+      );
+    };
+  }
+
+  onUsersList(handler: UsersListHandler): () => void {
+    this.usersListHandlers.push(handler);
+    return () => {
+      this.usersListHandlers = this.usersListHandlers.filter(
+        (h) => h !== handler
+      );
+    };
+  }
+
+  onJoinRoom(handler: JoinRoomHandler): () => void {
+    this.joinRoomHandlers.push(handler);
+    return () => {
+      this.joinRoomHandlers = this.joinRoomHandlers.filter(
+        (h) => h !== handler
+      );
+    };
+  }
+
+  onUserJoinLeave(handler: UserJoinLeaveHandler): () => void {
+    this.userJoinLeaveHandlers.push(handler);
+    return () => {
+      this.userJoinLeaveHandlers = this.userJoinLeaveHandlers.filter(
+        (h) => h !== handler
+      );
+    };
+  }
+
+  onReadReceipt(handler: ReadReceiptHandler): () => void {
+    this.readReceiptHandlers.push(handler);
+    return () => {
+      this.readReceiptHandlers = this.readReceiptHandlers.filter(
         (h) => h !== handler
       );
     };
