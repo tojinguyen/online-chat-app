@@ -16,7 +16,6 @@ import {
   getMessages,
   getPrivateChatRoom,
   Message,
-  sendMessage,
 } from "@/services/messageService";
 import { searchUsers, UserItem } from "@/services/profileService";
 import socketService from "@/services/socketService";
@@ -175,13 +174,38 @@ export default function HomePage() {
     if (user) {
       // Initialize socket connection when component mounts and user is logged in
       socketService.connect();
+
+      // Đăng ký lắng nghe tin nhắn mới từ socket
+      const messageHandler = socketService.onMessage((socketMessage) => {
+        // Chỉ xử lý tin nhắn nếu thuộc về cuộc trò chuyện đang mở
+        if (selectedChat && socketMessage.conversationId === selectedChat) {
+          const newMessage: Message = {
+            id: socketMessage.id,
+            conversationId: socketMessage.conversationId,
+            sender: socketMessage.senderName,
+            content: socketMessage.content,
+            time: new Date(socketMessage.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            isMine: socketMessage.senderId === localStorage.getItem("userId"),
+          };
+
+          setMessages((prevMessages) => [...prevMessages, newMessage]);
+        }
+      });
+
+      return () => {
+        // Hủy đăng ký lắng nghe và ngắt kết nối socket khi unmount
+        messageHandler();
+        socketService.disconnect();
+      };
     }
 
-    // Clean up socket connection when component unmounts
     return () => {
       socketService.disconnect();
     };
-  }, [user]);
+  }, [user, selectedChat]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -289,6 +313,16 @@ export default function HomePage() {
   useEffect(() => {
     if (selectedChat) {
       loadMessages(selectedChat);
+
+      // Join the chat room via socket when a chat is selected
+      socketService.joinChatRoom(selectedChat);
+
+      // Clean up function - leave the chat room when the selection changes
+      return () => {
+        if (selectedChat) {
+          socketService.leaveChatRoom(selectedChat);
+        }
+      };
     } else {
       // Clear messages when no chat is selected
       setMessages([]);
@@ -302,23 +336,30 @@ export default function HomePage() {
     router.push("/auth");
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = () => {
     if (messageText.trim() && selectedChat) {
       try {
-        // Call the API to send the message
-        const response = await sendMessage(selectedChat, messageText);
+        // Gửi tin nhắn qua socket thay vì qua API
+        socketService.sendMessage(selectedChat, messageText);
 
-        if (response.success) {
-          // Add the new message to the list
-          setMessages((prevMessages) => [
-            ...prevMessages,
-            response.data.message,
-          ]);
-          setMessageText(""); // Clear input after sending
-        } else {
-          console.error("Failed to send message:", response.message);
-          // Optionally show an error toast here
-        }
+        // Tạo tin nhắn tạm thời để hiển thị ngay trong UI
+        const tempMessage: Message = {
+          id: `temp_${Date.now()}`,
+          conversationId: selectedChat,
+          sender: "You",
+          content: messageText,
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          isMine: true,
+        };
+
+        // Thêm tin nhắn tạm thời vào danh sách
+        setMessages((prevMessages) => [...prevMessages, tempMessage]);
+
+        // Xóa nội dung tin nhắn sau khi gửi
+        setMessageText("");
       } catch (error) {
         console.error("Error sending message:", error);
         setMessagesError("Failed to send message. Please try again.");
