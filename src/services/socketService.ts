@@ -359,6 +359,7 @@ class SocketService {
 
   // Join a specific chat room
   joinChatRoom(conversationId: string): void {
+    console.log("Joining chat room:", conversationId);
     if (!this.isConnected()) {
       console.error("Cannot join room: Socket not connected");
       return;
