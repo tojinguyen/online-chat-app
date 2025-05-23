@@ -367,7 +367,7 @@ class SocketService {
 
     this.sendRaw({
       type: SocketMessageType.JOIN,
-      payload: { conversationId },
+      payload: { room_id: conversationId },
     });
   }
 
@@ -377,7 +377,7 @@ class SocketService {
 
     this.sendRaw({
       type: SocketMessageType.LEAVE,
-      payload: { conversationId },
+      payload: { room_id: conversationId },
     });
   }
 

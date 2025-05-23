@@ -297,6 +297,9 @@ export default function HomePage() {
         // Select the chat
         setSelectedChat(chatRoom.id);
 
+        // Trực tiếp gọi joinChatRoom tại đây
+        socketService.joinChatRoom(chatRoom.id);
+
         // Load chat rooms to refresh the list
         loadChatRooms();
       } else {
@@ -422,7 +425,16 @@ export default function HomePage() {
             <ConversationList
               conversations={chatRooms}
               selectedChat={selectedChat}
-              onSelectChat={(id) => setSelectedChat(id)}
+              onSelectChat={(id) => {
+                // If the same chat is clicked again, reload messages and join room
+                if (id === selectedChat) {
+                  loadMessages(id);
+                  // Gọi join room mỗi lần click vào một phòng chat
+                  socketService.joinChatRoom(id);
+                } else {
+                  setSelectedChat(id);
+                }
+              }}
               loading={loadingChatRooms}
               error={chatRoomsError}
               onRetry={loadChatRooms}
@@ -441,7 +453,17 @@ export default function HomePage() {
               friendsPage={friendsPage}
               friendsLimit={friendsLimit}
               selectedChat={selectedChat}
-              onSelectChat={handleFriendSelect}
+              onSelectChat={(id) => {
+                // If we're clicking on a friend that has already been selected for chat,
+                // reload the chat messages and join room again
+                if (id === selectedChat) {
+                  loadMessages(id);
+                  // Gọi join room mỗi lần click vào bạn bè để chat
+                  socketService.joinChatRoom(id);
+                } else {
+                  handleFriendSelect(id);
+                }
+              }}
               onClearError={() => setFriendsError(null)}
               onRefresh={loadFriends}
               onPageChange={handleFriendsPageChange}
