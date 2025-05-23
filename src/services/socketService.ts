@@ -335,11 +335,15 @@ class SocketService {
       return;
     }
 
+    // Gửi dữ liệu theo đúng cấu trúc SocketMessage với ChatMessagePayload
     this.sendRaw({
       type: SocketMessageType.CHAT,
-      payload: {
-        conversationId,
-        content,
+      chat_room_id: conversationId,
+      sender_id: localStorage.getItem("userId") || "",
+      timestamp: Date.now(),
+      data: {
+        content: content,
+        mime_type: "text/plain",
       },
     });
   }
@@ -348,11 +352,14 @@ class SocketService {
   sendTypingStatus(conversationId: string, isTyping: boolean): void {
     if (!this.isConnected()) return;
 
+    // Gửi dữ liệu theo đúng cấu trúc SocketMessage với TypingPayload
     this.sendRaw({
       type: SocketMessageType.TYPING,
-      payload: {
-        conversationId,
-        isTyping,
+      chat_room_id: conversationId,
+      sender_id: localStorage.getItem("userId") || "",
+      timestamp: Date.now(),
+      data: {
+        is_typing: isTyping,
       },
     });
   }
@@ -365,19 +372,31 @@ class SocketService {
       return;
     }
 
+    // Gửi dữ liệu theo đúng cấu trúc SocketMessage với JoinPayload
     this.sendRaw({
       type: SocketMessageType.JOIN,
-      payload: { room_id: conversationId },
+      chat_room_id: conversationId,
+      sender_id: localStorage.getItem("userId") || "",
+      timestamp: Date.now(),
+      data: {
+        room_id: conversationId,
+      },
     });
   }
 
   // Leave a specific chat room
-  leaveChatRoom(conversationId: string): void {
+  leaveChatRoom(conversationId: string, reason: string = "User left"): void {
     if (!this.isConnected()) return;
 
+    // Gửi dữ liệu theo đúng cấu trúc SocketMessage với LeavePayload
     this.sendRaw({
       type: SocketMessageType.LEAVE,
-      payload: { room_id: conversationId },
+      chat_room_id: conversationId,
+      sender_id: localStorage.getItem("userId") || "",
+      timestamp: Date.now(),
+      data: {
+        reason: reason,
+      },
     });
   }
 
@@ -385,11 +404,14 @@ class SocketService {
   sendReadReceipt(conversationId: string, messageId: string): void {
     if (!this.isConnected()) return;
 
+    // Gửi dữ liệu theo đúng cấu trúc SocketMessage với ReadReceiptPayload
     this.sendRaw({
       type: SocketMessageType.READ_RECEIPT,
-      payload: {
-        conversationId,
-        messageId,
+      chat_room_id: conversationId,
+      sender_id: localStorage.getItem("userId") || "",
+      timestamp: Date.now(),
+      data: {
+        message_id: messageId,
       },
     });
   }
