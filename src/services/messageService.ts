@@ -131,28 +131,53 @@ export async function getMessages(
         },
       }
     );
-
     if (response.data.success) {
       // Transform the API response to match our Message type
-      const messages: Message[] = response.data.data.map(
+      const messagesData = Array.isArray(response.data.data)
+        ? response.data.data
+        : [response.data.data];
+      // Lấy thông tin người dùng hiện tại từ localStorage
+      const currentUser = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+      const currentUserId = currentUser ? JSON.parse(currentUser).userId : null;
+      console.log("Current user ID:", currentUserId);
+
+      const messages: Message[] = messagesData.map(
         (msg: {
           id: string;
           content: string;
           created_at: string;
-          sender: { id: string; name: string };
-        }) => ({
-          id: msg.id,
-          conversationId,
-          sender: msg.sender.name,
-          content: msg.content,
-          time: new Date(msg.created_at).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          isMine: msg.sender.id === localStorage.getItem("userId"), // assuming userId is stored in localStorage
-        })
-      );
+          sender_id: string;
+          sender_name: string;
+          avatar_url?: string;
+          type: string;
+          mime_type: string;
+          chat_room_id: string;
+        }) => {
+          // So sánh chi tiết ID
+          console.log(`Comparing message ${msg.id}:`);
+          console.log(
+            `- Message sender_id: "${
+              msg.sender_id
+            }" (type: ${typeof msg.sender_id})`
+          );
+          console.log(
+            `- Current user ID: "${currentUserId}" (type: ${typeof currentUserId})`
+          );
+          console.log(`- Are they equal?: ${msg.sender_id === currentUserId}`);
 
+          return {
+            id: msg.id,
+            conversationId,
+            sender: msg.sender_name,
+            content: msg.content,
+            time: new Date(msg.created_at).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            isMine: msg.sender_id === currentUserId, // So sánh sender_id với ID người dùng hiện tại
+          };
+        }
+      );
       return {
         success: true,
         message: "Messages retrieved successfully",
@@ -163,17 +188,16 @@ export async function getMessages(
           limit: response.data.meta?.limit || limit,
         },
       };
-    }
-
-    // Fallback to mock data if API call fails or for development
+    } // Fallback to mock data if API call fails or for development
     console.log("Using mock message data for development");
+
     // Generate mock data
     const totalMessages = 30;
     const mockMessages: Message[] = Array.from({
       length: Math.min(limit, totalMessages),
     }).map((_, index) => {
       const messageIndex = (page - 1) * limit + index;
-      const isMine = messageIndex % 3 === 0;
+      const isMine = messageIndex % 3 === 0; // Mock alternating messages
 
       return {
         id: `msg_${conversationId}_${messageIndex}`,
@@ -230,20 +254,40 @@ export async function sendMessage(
         },
       }
     );
-
     if (response.data.success) {
       // Transform API response to match our Message type
-      const messageData = response.data.data;
+      const messageData =
+        Array.isArray(response.data.data) && response.data.data.length > 0
+          ? response.data.data[0]
+          : response.data.data; // Lấy thông tin người dùng hiện tại từ localStorage
+      const currentUser = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+      const currentUserId = currentUser ? JSON.parse(currentUser).userId : null;
+
+      console.log("Send Message - Current user ID:", currentUserId);
+      console.log(
+        `Send Message - Message sender_id: "${
+          messageData.sender_id
+        }" (type: ${typeof messageData.sender_id})`
+      );
+      console.log(
+        `Send Message - Current user ID: "${currentUserId}" (type: ${typeof currentUserId})`
+      );
+      console.log(
+        `Send Message - Are they equal?: ${
+          messageData.sender_id === currentUserId
+        }`
+      );
+
       const message: Message = {
         id: messageData.id,
         conversationId,
-        sender: "You", // Since we're sending it, it's always from us
+        sender: messageData.sender_name || "You", // Use sender_name from API or fallback to "You"
         content: messageData.content,
         time: new Date(messageData.created_at).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         }),
-        isMine: true,
+        isMine: messageData.sender_id === currentUserId, // So sánh sender_id với ID người dùng hiện tại
       };
 
       // Note: We don't need to emit via socket here since the server will broadcast
@@ -256,10 +300,9 @@ export async function sendMessage(
           message,
         },
       };
-    }
-
-    // Fallback to mock data if API call fails
+    } // Fallback to mock data if API call fails
     console.log("Using mock message data for development");
+
     const mockMessage: Message = {
       id: `msg_${Date.now()}`,
       conversationId,
@@ -269,7 +312,7 @@ export async function sendMessage(
         hour: "2-digit",
         minute: "2-digit",
       }),
-      isMine: true,
+      isMine: true, // Luôn đặt isMine = true cho tin nhắn giả lập do người dùng gửi
     };
     return {
       success: true,
