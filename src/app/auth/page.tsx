@@ -8,8 +8,8 @@ import { useState } from "react";
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("toainguyenjob@gmail.com");
+  const [password, setPassword] = useState("toai20102002");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
