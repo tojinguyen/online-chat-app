@@ -218,6 +218,7 @@ class SocketService {
     this.socket.onmessage = (event) => {
       try {
         const data: SocketMessage = JSON.parse(event.data);
+        console.log("WebSocket message received:", data);
 
         // Handle different message types
         switch (data.type) {
@@ -275,41 +276,74 @@ class SocketService {
 
           case SocketMessageType.JOIN_SUCCESS:
             console.log("Join room success:", data);
-            if (data.data) {
-              const joinData = data.data as unknown as JoinSuccessPayload;
-              this.joinRoomHandlers.forEach((handler) =>
-                handler(true, "Join room success", joinData.room_id)
-              );
+            if (data.chat_room_id) {
+              // Handle both formats
+              if (data.data) {
+                // Format with data field
+                const joinData = data.data as unknown as JoinSuccessPayload;
+                this.joinRoomHandlers.forEach((handler) =>
+                  handler(true, "Join room success", joinData.room_id)
+                );
+              } else {
+                // Format with direct fields
+                this.joinRoomHandlers.forEach((handler) =>
+                  handler(true, "Join room success", data.chat_room_id)
+                );
+              }
             }
             break;
 
           case SocketMessageType.JOIN_ERROR:
             console.error("Join room error:", data);
+            // Format with data field
             if (data.data) {
               const errorData = data.data as unknown as ErrorPayload;
               this.joinRoomHandlers.forEach((handler) =>
                 handler(false, errorData.message || "Join room error")
+              );
+            } else {
+              // Format with direct fields or missing error message
+              this.joinRoomHandlers.forEach((handler) =>
+                handler(false, "Join room error")
               );
             }
             break;
 
           case SocketMessageType.USER_JOINED:
             console.log("User joined:", data);
-            if (data.data && data.chat_room_id) {
-              const userEventData = data.data as unknown as UserEventPayload;
-              this.userJoinLeaveHandlers.forEach((handler) =>
-                handler(userEventData.user_id, data.chat_room_id!)
-              );
+            if (data.chat_room_id) {
+              // Handle both formats: with data field or with direct fields
+              if (data.data) {
+                // Format with data field
+                const userEventData = data.data as unknown as UserEventPayload;
+                this.userJoinLeaveHandlers.forEach((handler) =>
+                  handler(userEventData.user_id, data.chat_room_id!)
+                );
+              } else if (data.sender_id) {
+                // Format with direct fields (no data object)
+                this.userJoinLeaveHandlers.forEach((handler) =>
+                  handler(data.sender_id, data.chat_room_id!)
+                );
+              }
             }
             break;
 
           case SocketMessageType.USER_LEFT:
             console.log("User left:", data);
-            if (data.data && data.chat_room_id) {
-              const userEventData = data.data as unknown as UserEventPayload;
-              this.userJoinLeaveHandlers.forEach((handler) =>
-                handler(userEventData.user_id, data.chat_room_id!)
-              );
+            if (data.chat_room_id) {
+              // Handle both formats: with data field or with direct fields
+              if (data.data) {
+                // Format with data field
+                const userEventData = data.data as unknown as UserEventPayload;
+                this.userJoinLeaveHandlers.forEach((handler) =>
+                  handler(userEventData.user_id, data.chat_room_id!)
+                );
+              } else if (data.sender_id) {
+                // Format with direct fields (no data object)
+                this.userJoinLeaveHandlers.forEach((handler) =>
+                  handler(data.sender_id, data.chat_room_id!)
+                );
+              }
             }
             break;
 
