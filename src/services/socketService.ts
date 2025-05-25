@@ -629,11 +629,15 @@ class SocketService {
       return;
     }
 
+    // Lấy ID người dùng từ localStorage đúng cách
+    const currentUser = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+    const currentUserId = currentUser ? JSON.parse(currentUser).userId : "";
+
     // Gửi dữ liệu theo đúng cấu trúc SocketMessage với ChatMessagePayload
     this.sendRaw({
       type: SocketMessageType.CHAT,
       chat_room_id: conversationId,
-      sender_id: localStorage.getItem("userId") || "",
+      sender_id: currentUserId,
       timestamp: Date.now(),
       data: {
         content: content,
