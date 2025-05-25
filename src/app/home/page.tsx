@@ -81,14 +81,27 @@ export default function HomePage() {
       if (response.success) {
         // Convert API ChatRoom objects to Conversation objects for UI
         const conversationsFromChatRooms: Conversation[] = response.data.map(
-          (chatRoom) => ({
-            id: chatRoom.id,
-            name: chatRoom.name,
-            avatarUrl: chatRoom.avatar_url,
-            time: chatRoom.last_activity_time,
-            lastMessage: chatRoom.last_message,
-            unreadCount: chatRoom.unread_count,
-          })
+          (chatRoom) => {
+            let lastMessageStr = "";
+            if (
+              typeof chatRoom.last_message === "object" &&
+              chatRoom.last_message !== null
+            ) {
+              // Ép kiểu tạm thời để lấy content nếu có
+              const msgObj = chatRoom.last_message as { content?: string };
+              lastMessageStr = msgObj.content || JSON.stringify(msgObj);
+            } else if (typeof chatRoom.last_message === "string") {
+              lastMessageStr = chatRoom.last_message;
+            }
+            return {
+              id: chatRoom.id,
+              name: chatRoom.name,
+              avatarUrl: chatRoom.avatar_url,
+              time: chatRoom.last_activity_time,
+              lastMessage: lastMessageStr,
+              unreadCount: chatRoom.unread_count,
+            };
+          }
         );
 
         setChatRooms(conversationsFromChatRooms);
