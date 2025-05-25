@@ -394,6 +394,75 @@ export default function HomePage() {
     }
   };
 
+  const handleFileUpload = (files: FileList) => {
+    if (!selectedChat) {
+      console.error("No chat selected for file upload");
+      return;
+    }
+
+    Array.from(files).forEach((file) => {
+      console.log("File to upload:", {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        chatId: selectedChat,
+      });
+
+      // Create a temporary message for the file
+      const tempMessage: Message = {
+        id: `temp_file_${Date.now()}_${Math.random()}`,
+        conversationId: selectedChat,
+        sender: "You",
+        content: `📎 Uploaded file: ${file.name} (${(
+          file.size /
+          1024 /
+          1024
+        ).toFixed(2)} MB)`,
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        isMine: true,
+      };
+
+      // Add the file message to the chat
+      setMessages((prevMessages) => [...prevMessages, tempMessage]);
+
+      // TODO: Implement actual file upload to server
+      // This is where you would typically:
+      // 1. Upload the file to your server/cloud storage
+      // 2. Get the file URL/ID from the server response
+      // 3. Send a message with the file reference via socket
+      // 4. Replace the temporary message with the actual message from server
+
+      // Example of what the actual implementation might look like:
+      /*
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('chatId', selectedChat);
+      
+      fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${userToken}`,
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Send message with file reference via socket
+          socketService.sendMessage(selectedChat, `[FILE:${data.fileId}]${file.name}`);
+        }
+      })
+      .catch(error => {
+        console.error('File upload failed:', error);
+        setMessagesError('Failed to upload file. Please try again.');
+      });
+      */
+    });
+  };
+
   const handleClearSearch = () => {
     setSearchQuery("");
     setSearchResults([]);
@@ -504,6 +573,7 @@ export default function HomePage() {
             messageText={messageText}
             setMessageText={setMessageText}
             onSendMessage={handleSendMessage}
+            onFileUpload={handleFileUpload}
             isLoading={loadingMessages}
             error={messagesError}
           />
