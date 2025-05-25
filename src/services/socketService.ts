@@ -650,11 +650,15 @@ class SocketService {
   sendTypingStatus(conversationId: string, isTyping: boolean): void {
     if (!this.isConnected()) return;
 
+    // Lấy ID người dùng từ localStorage đúng cách
+    const currentUser = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+    const currentUserId = currentUser ? JSON.parse(currentUser).userId : "";
+
     // Gửi dữ liệu theo đúng cấu trúc SocketMessage với TypingPayload
     this.sendRaw({
       type: SocketMessageType.TYPING,
       chat_room_id: conversationId,
-      sender_id: localStorage.getItem("userId") || "",
+      sender_id: currentUserId,
       timestamp: Date.now(),
       data: {
         is_typing: isTyping,
