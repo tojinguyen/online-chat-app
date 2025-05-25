@@ -8,6 +8,7 @@ export enum SocketMessageType {
   LEAVE = "LEAVE", // Leave chat room
   TYPING = "TYPING", // Typing indicator
   READ_RECEIPT = "READ_RECEIPT", // Mark as read
+  PING = "PING", // Ping for keep-alive
 
   // Server messages
   USERS = "USERS", // User list
@@ -18,8 +19,8 @@ export enum SocketMessageType {
   ERROR = "ERROR", // Error notification
 
   // Legacy support
-  STATUS_CHANGE = "status_change",
-  PONG = "pong",
+  STATUS_CHANGE = "STATUS_CHANGE",
+  PONG = "PONG",
 }
 
 // Define event types for socket communication based on server structure
@@ -217,155 +218,178 @@ class SocketService {
     // Message received
     this.socket.onmessage = (event) => {
       try {
-        const data: SocketMessage = JSON.parse(event.data);
-        console.log("WebSocket message received:", data);
+        // Split the message by newline to handle multiple messages in one response
+        const messages = event.data
+          .toString()
+          .split("\n")
+          .filter((msg: string) => msg.trim() !== "");
 
-        // Handle different message types
-        switch (data.type) {
-          case SocketMessageType.CHAT:
-            console.log("New message received:", data);
-            this.messageHandlers.forEach((handler) => handler(data));
-            break;
+        for (const messageText of messages) {
+          if (!messageText.trim()) continue; // Skip empty messages
 
-          case SocketMessageType.STATUS_CHANGE: // Legacy support
-            console.log("User status changed:", data);
-            if (data.data) {
-              const legacyData = data.data as Record<string, unknown>;
-              this.statusChangeHandlers.forEach((handler) =>
-                handler(
-                  legacyData?.status as string,
-                  legacyData?.userId as string
-                )
-              );
-            }
-            break;
+          try {
+            const data: SocketMessage = JSON.parse(messageText);
+            console.log("WebSocket message received:", data);
 
-          case SocketMessageType.TYPING:
-            console.log("Typing indicator received:", data);
-            if (data.data && data.chat_room_id && data.sender_id) {
-              const typingData = data.data as unknown as TypingPayload;
-              this.typingHandlers.forEach((handler) =>
-                handler({
-                  chat_room_id: data.chat_room_id!,
-                  sender_id: data.sender_id,
-                  is_typing: typingData.is_typing,
-                })
-              );
-            }
-            break;
+            // Handle different message types
+            switch (data.type) {
+              case SocketMessageType.CHAT:
+                console.log("New message received:", data);
+                this.messageHandlers.forEach((handler) => handler(data));
+                break;
 
-          case SocketMessageType.ERROR:
-            console.error("Server error:", data);
-            if (data.data) {
-              const errorData = data.data as unknown as ErrorPayload;
-              console.error("Error message:", errorData.message);
-            }
-            break;
+              case SocketMessageType.STATUS_CHANGE: // Legacy support
+                console.log("User status changed:", data);
+                if (data.data) {
+                  const legacyData = data.data as Record<string, unknown>;
+                  this.statusChangeHandlers.forEach((handler) =>
+                    handler(
+                      legacyData?.status as string,
+                      legacyData?.userId as string
+                    )
+                  );
+                }
+                break;
 
-          case SocketMessageType.PONG: // Legacy ping/pong
-            // Handle pong message (keep-alive response)
-            break;
+              case SocketMessageType.TYPING:
+                console.log("Typing indicator received:", data);
+                if (data.data && data.chat_room_id && data.sender_id) {
+                  const typingData = data.data as unknown as TypingPayload;
+                  this.typingHandlers.forEach((handler) =>
+                    handler({
+                      chat_room_id: data.chat_room_id!,
+                      sender_id: data.sender_id,
+                      is_typing: typingData.is_typing,
+                    })
+                  );
+                }
+                break;
 
-          case SocketMessageType.USERS:
-            console.log("Users list received:", data);
-            if (data.data) {
-              const usersData = data.data as unknown as UsersPayload;
-              this.usersListHandlers.forEach((handler) => handler(usersData));
-            }
-            break;
+              case SocketMessageType.ERROR:
+                console.error("Server error:", data);
+                if (data.data) {
+                  const errorData = data.data as unknown as ErrorPayload;
+                  console.error("Error message:", errorData.message);
+                }
+                break;
 
-          case SocketMessageType.JOIN_SUCCESS:
-            console.log("Join room success:", data);
-            if (data.chat_room_id) {
-              // Handle both formats
-              if (data.data) {
+              case SocketMessageType.PONG: // Legacy ping/pong
+                // Handle pong message (keep-alive response)
+                break;
+
+              case SocketMessageType.USERS:
+                console.log("Users list received:", data);
+                if (data.data) {
+                  const usersData = data.data as unknown as UsersPayload;
+                  this.usersListHandlers.forEach((handler) =>
+                    handler(usersData)
+                  );
+                }
+                break;
+
+              case SocketMessageType.JOIN_SUCCESS:
+                console.log("Join room success:", data);
+                if (data.chat_room_id) {
+                  // Handle both formats
+                  if (data.data) {
+                    // Format with data field
+                    const joinData = data.data as unknown as JoinSuccessPayload;
+                    this.joinRoomHandlers.forEach((handler) =>
+                      handler(true, "Join room success", joinData.room_id)
+                    );
+                  } else {
+                    // Format with direct fields
+                    this.joinRoomHandlers.forEach((handler) =>
+                      handler(true, "Join room success", data.chat_room_id)
+                    );
+                  }
+                }
+                break;
+
+              case SocketMessageType.JOIN_ERROR:
+                console.error("Join room error:", data);
                 // Format with data field
-                const joinData = data.data as unknown as JoinSuccessPayload;
-                this.joinRoomHandlers.forEach((handler) =>
-                  handler(true, "Join room success", joinData.room_id)
-                );
-              } else {
-                // Format with direct fields
-                this.joinRoomHandlers.forEach((handler) =>
-                  handler(true, "Join room success", data.chat_room_id)
-                );
-              }
-            }
-            break;
+                if (data.data) {
+                  const errorData = data.data as unknown as ErrorPayload;
+                  this.joinRoomHandlers.forEach((handler) =>
+                    handler(false, errorData.message || "Join room error")
+                  );
+                } else {
+                  // Format with direct fields or missing error message
+                  this.joinRoomHandlers.forEach((handler) =>
+                    handler(false, "Join room error")
+                  );
+                }
+                break;
 
-          case SocketMessageType.JOIN_ERROR:
-            console.error("Join room error:", data);
-            // Format with data field
-            if (data.data) {
-              const errorData = data.data as unknown as ErrorPayload;
-              this.joinRoomHandlers.forEach((handler) =>
-                handler(false, errorData.message || "Join room error")
-              );
-            } else {
-              // Format with direct fields or missing error message
-              this.joinRoomHandlers.forEach((handler) =>
-                handler(false, "Join room error")
-              );
-            }
-            break;
+              case SocketMessageType.USER_JOINED:
+                console.log("User joined:", data);
+                if (data.chat_room_id) {
+                  // Handle both formats: with data field or with direct fields
+                  if (data.data) {
+                    // Format with data field
+                    const userEventData =
+                      data.data as unknown as UserEventPayload;
+                    this.userJoinLeaveHandlers.forEach((handler) =>
+                      handler(userEventData.user_id, data.chat_room_id!)
+                    );
+                  } else if (data.sender_id) {
+                    // Format with direct fields (no data object)
+                    this.userJoinLeaveHandlers.forEach((handler) =>
+                      handler(data.sender_id, data.chat_room_id!)
+                    );
+                  }
+                }
+                break;
 
-          case SocketMessageType.USER_JOINED:
-            console.log("User joined:", data);
-            if (data.chat_room_id) {
-              // Handle both formats: with data field or with direct fields
-              if (data.data) {
-                // Format with data field
-                const userEventData = data.data as unknown as UserEventPayload;
-                this.userJoinLeaveHandlers.forEach((handler) =>
-                  handler(userEventData.user_id, data.chat_room_id!)
-                );
-              } else if (data.sender_id) {
-                // Format with direct fields (no data object)
-                this.userJoinLeaveHandlers.forEach((handler) =>
-                  handler(data.sender_id, data.chat_room_id!)
-                );
-              }
-            }
-            break;
+              case SocketMessageType.USER_LEFT:
+                console.log("User left:", data);
+                if (data.chat_room_id) {
+                  // Handle both formats: with data field or with direct fields
+                  if (data.data) {
+                    // Format with data field
+                    const userEventData =
+                      data.data as unknown as UserEventPayload;
+                    this.userJoinLeaveHandlers.forEach((handler) =>
+                      handler(userEventData.user_id, data.chat_room_id!)
+                    );
+                  } else if (data.sender_id) {
+                    // Format with direct fields (no data object)
+                    this.userJoinLeaveHandlers.forEach((handler) =>
+                      handler(data.sender_id, data.chat_room_id!)
+                    );
+                  }
+                }
+                break;
 
-          case SocketMessageType.USER_LEFT:
-            console.log("User left:", data);
-            if (data.chat_room_id) {
-              // Handle both formats: with data field or with direct fields
-              if (data.data) {
-                // Format with data field
-                const userEventData = data.data as unknown as UserEventPayload;
-                this.userJoinLeaveHandlers.forEach((handler) =>
-                  handler(userEventData.user_id, data.chat_room_id!)
-                );
-              } else if (data.sender_id) {
-                // Format with direct fields (no data object)
-                this.userJoinLeaveHandlers.forEach((handler) =>
-                  handler(data.sender_id, data.chat_room_id!)
-                );
-              }
-            }
-            break;
+              case SocketMessageType.READ_RECEIPT:
+                console.log("Read receipt:", data);
+                if (data.data && data.chat_room_id) {
+                  const receiptData =
+                    data.data as unknown as ReadReceiptPayload;
+                  this.readReceiptHandlers.forEach((handler) =>
+                    handler({
+                      chat_room_id: data.chat_room_id!,
+                      message_id: receiptData.message_id,
+                      sender_id: data.sender_id,
+                    })
+                  );
+                }
+                break;
 
-          case SocketMessageType.READ_RECEIPT:
-            console.log("Read receipt:", data);
-            if (data.data && data.chat_room_id) {
-              const receiptData = data.data as unknown as ReadReceiptPayload;
-              this.readReceiptHandlers.forEach((handler) =>
-                handler({
-                  chat_room_id: data.chat_room_id!,
-                  message_id: receiptData.message_id,
-                  sender_id: data.sender_id,
-                })
-              );
+              default:
+                console.log("Unknown message type received:", data);
             }
-            break;
-
-          default:
-            console.log("Unknown message type received:", data);
+          } catch (parseError) {
+            console.error(
+              "Error parsing individual message:",
+              parseError,
+              messageText
+            );
+          }
         }
       } catch (error) {
-        console.error("Error parsing WebSocket message:", error, event.data);
+        console.error("Error processing WebSocket message:", error, event.data);
       }
     };
   }
@@ -380,7 +404,7 @@ class SocketService {
     // Send ping every 30 seconds to keep the connection alive
     this.pingInterval = setInterval(() => {
       if (this.isConnected()) {
-        this.sendRaw({ type: "ping" });
+        this.sendRaw({ type: SocketMessageType.PING });
       }
     }, 30000);
   }
