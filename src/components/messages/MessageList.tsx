@@ -27,11 +27,10 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
 
   return (
     <div className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col">
-      <div className="space-y-3 flex flex-col-reverse flex-1">
+      <div className="space-y-3 flex flex-col flex-1">
         {messages.length > 0 ? (
           <>
-            <div ref={messagesEndRef} />
-            {messages.map((message) => (
+            {[...messages].reverse().map((message) => (
               <MessageItem
                 key={message.id}
                 id={message.id}
@@ -40,6 +39,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
                 isMine={message.isMine}
               />
             ))}
+            <div ref={messagesEndRef} />
           </>
         ) : (
           <div className="flex justify-center items-center h-full">

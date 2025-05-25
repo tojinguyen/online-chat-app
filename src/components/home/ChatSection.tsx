@@ -1,6 +1,6 @@
 import { useSocket } from "@/hooks/useSocket";
 import { Message } from "@/services/messageService";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import OnlineStatus from "../common/OnlineStatus";
 import Avatar from "./Avatar";
 
@@ -36,6 +36,9 @@ export default function ChatSection({
   const [allMessages, setAllMessages] = useState<Message[]>(initialMessages);
   const [error, setError] = useState<string | null>(initialError);
 
+  // Reference to scroll to the latest message
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   // Connect to socket for real-time updates when chat is selected
   const {
     messages: socketMessages,
@@ -53,6 +56,15 @@ export default function ChatSection({
   useEffect(() => {
     setError(initialError);
   }, [initialError]);
+
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [allMessages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   // Handle typing indicator
   useEffect(() => {
@@ -144,7 +156,7 @@ export default function ChatSection({
               <p>No messages yet. Start a conversation!</p>
             </div>
           ) : (
-            allMessages.map((message) => (
+            [...allMessages].reverse().map((message) => (
               <div
                 key={message.id}
                 className={`flex mb-4 ${
@@ -190,6 +202,7 @@ export default function ChatSection({
               </div>
             ))
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         <div className="p-3 border-t border-gray-200 bg-white">
