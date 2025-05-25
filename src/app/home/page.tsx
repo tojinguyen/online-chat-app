@@ -22,6 +22,13 @@ import socketService, {
   ChatMessagePayload,
   SocketMessageType,
 } from "@/services/socketService";
+import {
+  getUploadSignature,
+  isAudioFile,
+  isImageFile,
+  isVideoFile,
+  uploadFileToCloudinary,
+} from "@/services/uploadService";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -400,7 +407,7 @@ export default function HomePage() {
       return;
     }
 
-    Array.from(files).forEach((file) => {
+    Array.from(files).forEach(async (file) => {
       console.log("File to upload:", {
         name: file.name,
         size: file.size,
@@ -408,16 +415,17 @@ export default function HomePage() {
         chatId: selectedChat,
       });
 
-      // Create a temporary message for the file
+      // Create a temporary message for the file with loading indicator
+      const tempId = `temp_file_${Date.now()}_${Math.random()}`;
       const tempMessage: Message = {
-        id: `temp_file_${Date.now()}_${Math.random()}`,
+        id: tempId,
         conversationId: selectedChat,
         sender: "You",
-        content: `📎 Uploaded file: ${file.name} (${(
+        content: `📎 Uploading: ${file.name} (${(
           file.size /
           1024 /
           1024
-        ).toFixed(2)} MB)`,
+        ).toFixed(2)} MB)...`,
         time: new Date().toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
@@ -425,41 +433,67 @@ export default function HomePage() {
         isMine: true,
       };
 
-      // Add the file message to the chat
+      // Add the temporary message to the chat
       setMessages((prevMessages) => [...prevMessages, tempMessage]);
 
-      // TODO: Implement actual file upload to server
-      // This is where you would typically:
-      // 1. Upload the file to your server/cloud storage
-      // 2. Get the file URL/ID from the server response
-      // 3. Send a message with the file reference via socket
-      // 4. Replace the temporary message with the actual message from server
+      try {
+        // 1. Get upload signature from our API
+        const signatureData = await getUploadSignature();
 
-      // Example of what the actual implementation might look like:
-      /*
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('chatId', selectedChat);
-      
-      fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Authorization': `Bearer ${userToken}`,
-        },
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          // Send message with file reference via socket
-          socketService.sendMessage(selectedChat, `[FILE:${data.fileId}]${file.name}`);
+        // 2. Upload the file to Cloudinary
+        const uploadResult = await uploadFileToCloudinary(file, signatureData);
+
+        // 3. Prepare the message content based on file type
+        let messageContent = "";
+
+        if (isImageFile(file)) {
+          // For images, create a message with image display
+          messageContent = `[IMG:${uploadResult.secure_url}]`;
+        } else if (isVideoFile(file)) {
+          // For videos, create a message with video player
+          messageContent = `[VIDEO:${uploadResult.secure_url}]`;
+        } else if (isAudioFile(file)) {
+          // For audio, create a message with audio player
+          messageContent = `[AUDIO:${uploadResult.secure_url}]`;
+        } else {
+          // For other files, create a message with download link
+          messageContent = `[FILE:${uploadResult.secure_url}]${file.name}`;
         }
-      })
-      .catch(error => {
-        console.error('File upload failed:', error);
-        setMessagesError('Failed to upload file. Please try again.');
-      });
-      */
+
+        // 4. Send the message with file reference via socket
+        socketService.sendMessage(selectedChat, messageContent);
+
+        // 5. Update the temporary message with the uploaded file information
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg.id === tempId
+              ? {
+                  ...msg,
+                  content: `📎 Uploaded: ${file.name} (${(
+                    file.size /
+                    1024 /
+                    1024
+                  ).toFixed(2)} MB)`,
+                }
+              : msg
+          )
+        );
+      } catch (error) {
+        console.error("File upload failed:", error);
+        setMessagesError("Failed to upload file. Please try again.");
+
+        // Update the temporary message to show the error
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg.id === tempId
+              ? {
+                  ...msg,
+                  content: `❌ Upload failed: ${file.name}. Please try again.`,
+                }
+              : msg
+          )
+        );
+      }
     });
   };
 

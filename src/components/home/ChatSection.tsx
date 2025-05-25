@@ -213,13 +213,91 @@ export default function ChatSection({
                       {message.time}
                     </span>
                   </div>
-                  <p
-                    className={`font-medium text-base ${
-                      message.isMine ? "text-white" : "text-black"
-                    }`}
-                  >
-                    {message.content}
-                  </p>
+                  {message.content.startsWith("[IMG:") ? (
+                    // Display image
+                    <div className="mt-1">
+                      <img
+                        src={message.content.substring(
+                          5,
+                          message.content.length - 1
+                        )}
+                        alt="Shared image"
+                        className="max-w-full rounded-md"
+                        style={{ maxHeight: "300px" }}
+                      />
+                    </div>
+                  ) : message.content.startsWith("[VIDEO:") ? (
+                    // Display video
+                    <div className="mt-1">
+                      <video
+                        src={message.content.substring(
+                          7,
+                          message.content.length - 1
+                        )}
+                        controls
+                        className="max-w-full rounded-md"
+                        style={{ maxHeight: "300px" }}
+                      >
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                  ) : message.content.startsWith("[AUDIO:") ? (
+                    // Display audio
+                    <div className="mt-1">
+                      <audio
+                        src={message.content.substring(
+                          7,
+                          message.content.length - 1
+                        )}
+                        controls
+                        className="max-w-full"
+                      >
+                        Your browser does not support the audio tag.
+                      </audio>
+                    </div>
+                  ) : message.content.startsWith("[FILE:") ? (
+                    // Display file link
+                    <div className="mt-1">
+                      <a
+                        href={message.content.substring(
+                          6,
+                          message.content.indexOf("]")
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex items-center ${
+                          message.isMine ? "text-white" : "text-blue-600"
+                        } hover:underline`}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5 mr-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        {message.content.substring(
+                          message.content.indexOf("]") + 1
+                        )}
+                      </a>
+                    </div>
+                  ) : (
+                    // Regular text message
+                    <p
+                      className={`font-medium text-base ${
+                        message.isMine ? "text-white" : "text-black"
+                      }`}
+                    >
+                      {message.content}
+                    </p>
+                  )}
                 </div>
               </div>
             ))
