@@ -1,6 +1,6 @@
 import { Message } from "@/services/messageService";
 import React from "react";
-import MessageItem from "./MessageItem";
+import MessageItem from "./MessageItem.js";
 
 interface MessageDisplayProps {
   messages: Message[];

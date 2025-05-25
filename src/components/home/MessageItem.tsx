@@ -1,6 +1,6 @@
 import { Message } from "@/services/messageService";
 import Avatar from "./Avatar";
-import MessageContent from "./MessageContent";
+import MessageContent from "./MessageContent.js";
 
 interface MessageItemProps {
   message: Message;
