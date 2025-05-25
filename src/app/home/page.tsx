@@ -441,15 +441,6 @@ export default function HomePage() {
         const signatureResponse = await getUploadSignature();
         const signatureData = signatureResponse.data;
 
-        console.log(
-          "Upload signature data:",
-          signatureData.api_key,
-          signatureData.timestamp,
-          signatureData.signature,
-          signatureData.folder,
-          signatureData.cloud_name
-        );
-
         // 2. Upload the file to Cloudinary
         const uploadResult = await uploadFileToCloudinary(file, signatureData);
 
