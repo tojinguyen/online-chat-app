@@ -1,6 +1,9 @@
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { Message } from "@/services/messageService";
-import socketService, { ConnectionStatus } from "@/services/socketService";
+import socketService, {
+  ChatMessagePayload,
+  ConnectionStatus,
+} from "@/services/socketService";
 import { useCallback, useEffect, useState } from "react";
 
 export function useSocket(conversationId?: string) {
@@ -44,17 +47,18 @@ export function useSocket(conversationId?: string) {
 
     // Handle incoming messages
     const unsubMessage = socketService.onMessage((socketMsg) => {
-      if (conversationId && socketMsg.conversationId === conversationId) {
+      if (conversationId && socketMsg.chat_room_id === conversationId) {
+        const chatData = socketMsg.data as unknown as ChatMessagePayload;
         const newMessage: Message = {
-          id: socketMsg.id,
-          conversationId: socketMsg.conversationId,
-          sender: socketMsg.senderName,
-          content: socketMsg.content,
+          id: chatData?.message_id || `socket_${Date.now()}`,
+          conversationId: socketMsg.chat_room_id || "",
+          sender: socketMsg.sender_id,
+          content: chatData?.content || "",
           time: new Date(socketMsg.timestamp).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           }),
-          isMine: socketMsg.senderId === user,
+          isMine: socketMsg.sender_id === user,
         };
 
         setMessages((prev) => [...prev, newMessage]);
@@ -63,10 +67,10 @@ export function useSocket(conversationId?: string) {
 
     // Handle typing indicators
     const unsubTyping = socketService.onTyping((data) => {
-      if (conversationId && data.conversationId === conversationId) {
+      if (conversationId && data.chat_room_id === conversationId) {
         setTypingUsers((prev) => ({
           ...prev,
-          [data.userId]: data.isTyping,
+          [data.sender_id]: data.is_typing,
         }));
       }
     });
