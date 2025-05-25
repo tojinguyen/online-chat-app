@@ -18,7 +18,10 @@ import {
   Message,
 } from "@/services/messageService";
 import { searchUsers, UserItem } from "@/services/profileService";
-import socketService from "@/services/socketService";
+import socketService, {
+  ChatMessagePayload,
+  SocketMessageType,
+} from "@/services/socketService";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -190,18 +193,26 @@ export default function HomePage() {
 
       // Đăng ký lắng nghe tin nhắn mới từ socket
       const messageHandler = socketService.onMessage((socketMessage) => {
-        // Chỉ xử lý tin nhắn nếu thuộc về cuộc trò chuyện đang mở
-        if (selectedChat && socketMessage.conversationId === selectedChat) {
+        // Chỉ xử lý tin nhắn nếu là tin nhắn chat và thuộc về cuộc trò chuyện đang mở
+        if (
+          socketMessage.type === SocketMessageType.CHAT &&
+          selectedChat &&
+          socketMessage.chat_room_id === selectedChat
+        ) {
+          // Trích xuất dữ liệu từ data property theo đúng cấu trúc ChatMessagePayload
+          const messageData =
+            socketMessage.data as unknown as ChatMessagePayload;
+
           const newMessage: Message = {
-            id: socketMessage.id,
-            conversationId: socketMessage.conversationId,
-            sender: socketMessage.senderName,
-            content: socketMessage.content,
+            id: messageData.message_id || `msg_${Date.now()}`,
+            conversationId: socketMessage.chat_room_id || "",
+            sender: socketMessage.sender_id, // Có thể cần lấy tên từ một nguồn khác nếu API chỉ trả về ID
+            content: messageData.content,
             time: new Date(socketMessage.timestamp).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             }),
-            isMine: socketMessage.senderId === localStorage.getItem("userId"),
+            isMine: socketMessage.sender_id === localStorage.getItem("userId"),
           };
 
           setMessages((prevMessages) => [...prevMessages, newMessage]);
