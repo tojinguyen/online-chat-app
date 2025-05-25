@@ -133,7 +133,7 @@ class SocketService {
   private pingInterval: ReturnType<typeof setInterval> | null = null;
 
   // Connect to the WebSocket server
-  connect(): void {
+  async connect(): Promise<void> {
     try {
       if (this.socket) {
         // If a socket connection exists, disconnect it first
@@ -195,12 +195,30 @@ class SocketService {
     // Connection error
     this.socket.onerror = (event) => {
       console.error("WebSocket connection error:", event);
-      this.handleConnectionError();
+
+      // Kiểm tra nếu lỗi có thể do token hết hạn
+      // Define a type for the error event that might have a code property
+      interface WebSocketErrorWithCode extends Event {
+        code?: number;
+      }
+      const statusCode = (event as WebSocketErrorWithCode).code || 0;
+      if (statusCode === 401 || statusCode === 403) {
+        console.log("WebSocket unauthorized, attempting to refresh token...");
+        this.refreshTokenAndReconnect().then((success) => {
+          if (success) {
+            this.connect();
+          } else {
+            this.handleConnectionError();
+          }
+        });
+      } else {
+        this.handleConnectionError();
+      }
     };
 
     // Disconnected from server
     this.socket.onclose = (event) => {
-      console.log("WebSocket disconnected:", event.reason);
+      console.log("WebSocket disconnected:", event.reason, "Code:", event.code);
       this.updateConnectionStatus("disconnected");
 
       // Clear ping interval
@@ -209,8 +227,30 @@ class SocketService {
         this.pingInterval = null;
       }
 
+      // Nếu là lỗi unauthorized (401) hoặc lỗi forbidden (403), thử refresh token
+      if (
+        event.code === 1001 ||
+        event.code === 1006 ||
+        event.code === 1008 ||
+        event.code === 4401 ||
+        event.code === 4403
+      ) {
+        console.log(
+          "WebSocket closed with auth error, attempting to refresh token..."
+        );
+        this.refreshTokenAndReconnect().then((success) => {
+          if (success) {
+            this.connect();
+          } else {
+            // Attempt reconnection if not client-initiated disconnect and not auth failure
+            if (event.code !== 1000) {
+              this.attemptReconnect();
+            }
+          }
+        });
+      }
       // Attempt reconnection if not client-initiated disconnect
-      if (event.code !== 1000) {
+      else if (event.code !== 1000) {
         this.attemptReconnect();
       }
     };
@@ -270,6 +310,19 @@ class SocketService {
                 if (data.data) {
                   const errorData = data.data as unknown as ErrorPayload;
                   console.error("Error message:", errorData.message);
+
+                  // Xử lý lỗi unauthorized từ server
+                  if (
+                    errorData.message.includes("unauthorized") ||
+                    errorData.message.includes("token") ||
+                    errorData.message.includes("auth")
+                  ) {
+                    this.refreshTokenAndReconnect().then((success) => {
+                      if (success) {
+                        this.connect();
+                      }
+                    });
+                  }
                 }
                 break;
 
@@ -314,6 +367,19 @@ class SocketService {
                   this.joinRoomHandlers.forEach((handler) =>
                     handler(false, errorData.message || "Join room error")
                   );
+
+                  // Kiểm tra lỗi unauthorized
+                  if (
+                    errorData.message.includes("unauthorized") ||
+                    errorData.message.includes("token") ||
+                    errorData.message.includes("auth")
+                  ) {
+                    this.refreshTokenAndReconnect().then((success) => {
+                      if (success) {
+                        this.connect();
+                      }
+                    });
+                  }
                 } else {
                   // Format with direct fields or missing error message
                   this.joinRoomHandlers.forEach((handler) =>
@@ -426,6 +492,61 @@ class SocketService {
     this.attemptReconnect();
   }
 
+  // Attempt to reconnect with exponential backoff and token refresh if needed
+  private async refreshTokenAndReconnect(): Promise<boolean> {
+    try {
+      const refreshToken = localStorage.getItem(
+        AUTH_STORAGE_KEYS.REFRESH_TOKEN
+      );
+
+      // Nếu không có refresh token, không thể làm gì thêm
+      if (!refreshToken) {
+        console.error("No refresh token available for reconnection");
+        return false;
+      }
+
+      // Sử dụng fetch để gọi API refresh token (thay vì import authService để tránh circular dependency)
+      const response = await fetch(`${API_URL}/auth/refresh-token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to refresh token during socket reconnection");
+        return false;
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data.accessToken) {
+        // Lưu access token mới vào localStorage
+        localStorage.setItem(
+          AUTH_STORAGE_KEYS.ACCESS_TOKEN,
+          data.data.accessToken
+        );
+
+        // Nếu có refresh token mới, cũng lưu lại
+        if (data.data.refreshToken) {
+          localStorage.setItem(
+            AUTH_STORAGE_KEYS.REFRESH_TOKEN,
+            data.data.refreshToken
+          );
+        }
+
+        console.log("Token refreshed successfully, reconnecting socket...");
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Error refreshing token for socket reconnection:", error);
+      return false;
+    }
+  }
+
   // Attempt to reconnect with exponential backoff
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
@@ -441,8 +562,27 @@ class SocketService {
       this.reconnectInterval * Math.pow(1.5, this.reconnectAttempts);
     console.log(`Attempting to reconnect in ${delay}ms...`);
 
-    this.reconnectTimer = setTimeout(() => {
+    this.reconnectTimer = setTimeout(async () => {
       this.reconnectAttempts++;
+
+      // Kiểm tra token và refresh nếu cần
+      const accessToken = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+
+      // Nếu không có access token hoặc gặp lỗi 401, thử refresh token
+      if (!accessToken || this.socket?.readyState === WebSocket.CLOSED) {
+        try {
+          const refreshSuccess = await this.refreshTokenAndReconnect();
+          if (refreshSuccess) {
+            // Nếu refresh token thành công, kết nối lại
+            this.connect();
+            return;
+          }
+        } catch (error) {
+          console.error("Error during token refresh:", error);
+        }
+      }
+
+      // Tiếp tục cố gắng kết nối bình thường
       this.connect();
     }, delay);
   }
