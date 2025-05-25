@@ -2,6 +2,7 @@
 import { API_URL, AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import axios from "axios";
 import { ApiResponse } from "./authService"; // Assuming this type is defined in authService
+import { ChatMessagePayload, SocketMessage } from "./socketService";
 
 // Define Message type for the app
 export interface Message {
@@ -11,6 +12,33 @@ export interface Message {
   content: string;
   time: string;
   isMine: boolean;
+}
+
+// Helper function to convert SocketMessage to Message
+export function socketMessageToMessage(
+  socketMessage: SocketMessage
+): Message | null {
+  if (socketMessage.data) {
+    const chatData = socketMessage.data as unknown as ChatMessagePayload;
+    const currentUser = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+    const currentUserId = currentUser ? JSON.parse(currentUser).userId : null;
+
+    return {
+      id: chatData.message_id || `socket_${Date.now()}`,
+      conversationId: socketMessage.chat_room_id || "",
+      sender:
+        socketMessage.sender_id === currentUserId
+          ? "You"
+          : socketMessage.sender_id,
+      content: chatData.content,
+      time: new Date(socketMessage.timestamp).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      isMine: socketMessage.sender_id === currentUserId,
+    };
+  }
+  return null;
 }
 
 // Define ChatRoom type based on the API specification

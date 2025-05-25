@@ -16,10 +16,64 @@ export enum SocketMessageType {
   USER_JOINED = "USER_JOINED", // User joined notification
   USER_LEFT = "USER_LEFT", // User left notification
   ERROR = "ERROR", // Error notification
+
+  // Legacy support
+  STATUS_CHANGE = "status_change",
+  PONG = "pong",
 }
 
-// Define event types for socket communication
+// Define event types for socket communication based on server structure
 export interface SocketMessage {
+  type: SocketMessageType;
+  chat_room_id?: string;
+  sender_id: string;
+  timestamp: number;
+  data?: Record<string, unknown>; // Raw JSON data from server
+}
+
+// Payload interfaces matching server structure
+export interface ChatMessagePayload {
+  content: string;
+  message_id?: string;
+  mime_type?: string;
+}
+
+export interface JoinPayload {
+  room_id: string;
+}
+
+export interface LeavePayload {
+  reason?: string;
+}
+
+export interface TypingPayload {
+  is_typing: boolean;
+}
+
+export interface ReadReceiptPayload {
+  message_id: string;
+}
+
+export interface UsersPayload {
+  user_ids: string[];
+}
+
+export interface JoinSuccessPayload {
+  room_id: string;
+  status: string;
+}
+
+export interface UserEventPayload {
+  user_id: string;
+  user_name?: string;
+}
+
+export interface ErrorPayload {
+  message: string;
+}
+
+// Legacy interface for backward compatibility with existing components
+export interface LegacySocketMessage {
   conversationId: string;
   content: string;
   id: string;
@@ -42,22 +96,22 @@ export type ConnectionStatus = "connected" | "disconnected" | "connecting";
 type MessageHandler = (message: SocketMessage) => void;
 type StatusChangeHandler = (status: string, userId: string) => void;
 type TypingHandler = (data: {
-  conversationId: string;
-  userId: string;
-  isTyping: boolean;
+  chat_room_id: string;
+  sender_id: string;
+  is_typing: boolean;
 }) => void;
 type ConnectionStatusHandler = (status: ConnectionStatus) => void;
-type UsersListHandler = (users: UserInfo[]) => void;
+type UsersListHandler = (users: UsersPayload) => void;
 type JoinRoomHandler = (
   status: boolean,
   message: string,
   roomId?: string
 ) => void;
-type UserJoinLeaveHandler = (userId: string, conversationId: string) => void;
+type UserJoinLeaveHandler = (userId: string, chatRoomId: string) => void;
 type ReadReceiptHandler = (data: {
-  conversationId: string;
-  messageId: string;
-  userId: string;
+  chat_room_id: string;
+  message_id: string;
+  sender_id: string;
 }) => void;
 
 class SocketService {
@@ -163,72 +217,114 @@ class SocketService {
     // Message received
     this.socket.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
+        const data: SocketMessage = JSON.parse(event.data);
 
         // Handle different message types
         switch (data.type) {
           case SocketMessageType.CHAT:
-            console.log("New message received:", data.payload);
-            this.messageHandlers.forEach((handler) => handler(data.payload));
+            console.log("New message received:", data);
+            this.messageHandlers.forEach((handler) => handler(data));
             break;
 
-          case "status_change": // Legacy support
-            console.log("User status changed:", data.payload);
-            this.statusChangeHandlers.forEach((handler) =>
-              handler(data.payload.status, data.payload.userId)
-            );
+          case SocketMessageType.STATUS_CHANGE: // Legacy support
+            console.log("User status changed:", data);
+            if (data.data) {
+              const legacyData = data.data as Record<string, unknown>;
+              this.statusChangeHandlers.forEach((handler) =>
+                handler(
+                  legacyData?.status as string,
+                  legacyData?.userId as string
+                )
+              );
+            }
             break;
 
           case SocketMessageType.TYPING:
-            this.typingHandlers.forEach((handler) => handler(data.payload));
+            console.log("Typing indicator received:", data);
+            if (data.data && data.chat_room_id && data.sender_id) {
+              const typingData = data.data as unknown as TypingPayload;
+              this.typingHandlers.forEach((handler) =>
+                handler({
+                  chat_room_id: data.chat_room_id!,
+                  sender_id: data.sender_id,
+                  is_typing: typingData.is_typing,
+                })
+              );
+            }
             break;
 
           case SocketMessageType.ERROR:
-            console.error("Server error:", data.payload);
+            console.error("Server error:", data);
+            if (data.data) {
+              const errorData = data.data as unknown as ErrorPayload;
+              console.error("Error message:", errorData.message);
+            }
             break;
 
-          case "pong": // Legacy ping/pong
+          case SocketMessageType.PONG: // Legacy ping/pong
             // Handle pong message (keep-alive response)
             break;
 
           case SocketMessageType.USERS:
-            console.log("Users list received:", data.payload);
-            this.usersListHandlers.forEach((handler) => handler(data.payload));
+            console.log("Users list received:", data);
+            if (data.data) {
+              const usersData = data.data as unknown as UsersPayload;
+              this.usersListHandlers.forEach((handler) => handler(usersData));
+            }
             break;
 
           case SocketMessageType.JOIN_SUCCESS:
-            console.log("Join room success:", data.payload);
-            this.joinRoomHandlers.forEach((handler) =>
-              handler(true, "Join room success", data.payload.conversationId)
-            );
+            console.log("Join room success:", data);
+            if (data.data) {
+              const joinData = data.data as unknown as JoinSuccessPayload;
+              this.joinRoomHandlers.forEach((handler) =>
+                handler(true, "Join room success", joinData.room_id)
+              );
+            }
             break;
 
           case SocketMessageType.JOIN_ERROR:
-            console.error("Join room error:", data.payload);
-            this.joinRoomHandlers.forEach((handler) =>
-              handler(false, data.payload.message || "Join room error")
-            );
+            console.error("Join room error:", data);
+            if (data.data) {
+              const errorData = data.data as unknown as ErrorPayload;
+              this.joinRoomHandlers.forEach((handler) =>
+                handler(false, errorData.message || "Join room error")
+              );
+            }
             break;
 
           case SocketMessageType.USER_JOINED:
-            console.log("User joined:", data.payload);
-            this.userJoinLeaveHandlers.forEach((handler) =>
-              handler(data.payload.userId, data.payload.conversationId)
-            );
+            console.log("User joined:", data);
+            if (data.data && data.chat_room_id) {
+              const userEventData = data.data as unknown as UserEventPayload;
+              this.userJoinLeaveHandlers.forEach((handler) =>
+                handler(userEventData.user_id, data.chat_room_id!)
+              );
+            }
             break;
 
           case SocketMessageType.USER_LEFT:
-            console.log("User left:", data.payload);
-            this.userJoinLeaveHandlers.forEach((handler) =>
-              handler(data.payload.userId, data.payload.conversationId)
-            );
+            console.log("User left:", data);
+            if (data.data && data.chat_room_id) {
+              const userEventData = data.data as unknown as UserEventPayload;
+              this.userJoinLeaveHandlers.forEach((handler) =>
+                handler(userEventData.user_id, data.chat_room_id!)
+              );
+            }
             break;
 
           case SocketMessageType.READ_RECEIPT:
-            console.log("Read receipt:", data.payload);
-            this.readReceiptHandlers.forEach((handler) =>
-              handler(data.payload)
-            );
+            console.log("Read receipt:", data);
+            if (data.data && data.chat_room_id) {
+              const receiptData = data.data as unknown as ReadReceiptPayload;
+              this.readReceiptHandlers.forEach((handler) =>
+                handler({
+                  chat_room_id: data.chat_room_id!,
+                  message_id: receiptData.message_id,
+                  sender_id: data.sender_id,
+                })
+              );
+            }
             break;
 
           default:
