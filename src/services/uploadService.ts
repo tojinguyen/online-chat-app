@@ -2,6 +2,13 @@
 import { API_URL, AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import axios from "axios";
 
+// Define the API response structure
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
 // Define the upload signature response structure
 export interface UploadSignatureResponse {
   signature: string;
@@ -29,14 +36,20 @@ export interface CloudinaryUploadResponse {
 }
 
 // Get file upload signature from the server
-export async function getUploadSignature(): Promise<UploadSignatureResponse> {
+export async function getUploadSignature(): Promise<
+  ApiResponse<UploadSignatureResponse>
+> {
   try {
     const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
-    const response = await axios.get(`${API_URL}/uploads/file-signature`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await axios.post(
+      `${API_URL}/uploads/file-signature`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     return response.data;
   } catch (error) {
