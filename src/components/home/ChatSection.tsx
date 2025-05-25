@@ -1,5 +1,6 @@
 import { useSocket } from "@/hooks/useSocket";
 import { Message } from "@/services/messageService";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import OnlineStatus from "../common/OnlineStatus";
 import Avatar from "./Avatar";
@@ -216,14 +217,16 @@ export default function ChatSection({
                   {message.content.startsWith("[IMG:") ? (
                     // Display image
                     <div className="mt-1">
-                      <img
+                      <Image
                         src={message.content.substring(
                           5,
                           message.content.length - 1
                         )}
                         alt="Shared image"
                         className="max-w-full rounded-md"
-                        style={{ maxHeight: "300px" }}
+                        width={300}
+                        height={300}
+                        style={{ maxHeight: "300px", objectFit: "contain" }}
                       />
                     </div>
                   ) : message.content.startsWith("[VIDEO:") ? (
