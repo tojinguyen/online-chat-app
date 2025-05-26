@@ -29,7 +29,7 @@ export default function ChatHeader({
         <div className="ml-3">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-gray-800">
-              {chatName || "Chat"}
+              {chatName}
             </h3>
             {getConnectionStatusIcon()}
           </div>
