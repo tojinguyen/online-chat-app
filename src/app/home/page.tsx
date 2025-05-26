@@ -548,7 +548,7 @@ export default function HomePage() {
           />
         )}
         <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
           {activeTab === "chats" ? (
             <ConversationList
               conversations={chatRooms}
