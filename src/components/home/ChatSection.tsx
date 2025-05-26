@@ -84,7 +84,7 @@ export default function ChatSection({
   );
 
   return (
-    <>
+    <div className="h-screen flex flex-col">
       <ChatHeader
         chatName={chatName}
         chatAvatarUrl={chatAvatarUrl}
@@ -92,7 +92,7 @@ export default function ChatSection({
         isAnyoneTyping={isAnyoneTyping}
       />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
         <MessageDisplay
           messages={allMessages}
           isLoading={isLoading}
@@ -109,6 +109,6 @@ export default function ChatSection({
           sendTypingStatus={sendTypingStatus}
         />
       </div>
-    </>
+    </div>
   );
 }
