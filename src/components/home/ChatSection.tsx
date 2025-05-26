@@ -61,6 +61,16 @@ export default function ChatSection({
     scrollToBottom();
   }, [allMessages]);
 
+  // Initial scroll to bottom when component mounts or chat changes
+  useEffect(() => {
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [selectedChat]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
