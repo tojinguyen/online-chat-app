@@ -34,7 +34,11 @@ function getMessagePreview(chat: Conversation): string {
   
   const messageType = chat.lastMessageType || MessageType.TEXT;
   
-  if (messageType === MessageType.TEXT) return chat.lastMessage;
+  if (messageType === MessageType.TEXT) {
+    return chat.lastMessage.length > 30 
+      ? chat.lastMessage.substring(0, 30) + '...'
+      : chat.lastMessage;
+  }
 
   const messageTypes: Record<Exclude<MessageType, MessageType.TEXT>, string> = {
     [MessageType.IMAGE]: 'ảnh',
@@ -53,7 +57,9 @@ function getMessagePreview(chat: Conversation): string {
     return `${chat.lastMessageSender.name} đã gửi một ${typeText}`;
   }
 
-  return chat.lastMessage;
+  return chat.lastMessage.length > 20 
+    ? chat.lastMessage.substring(0, 20) + '...'
+    : chat.lastMessage;
 }
 
 export default function ConversationItem({ chat, isSelected, onSelect }: ConversationItemProps) {
