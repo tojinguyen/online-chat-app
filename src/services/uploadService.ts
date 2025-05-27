@@ -9,6 +9,11 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+// Define the signature request structure
+export interface SignatureRequest {
+  resourceType: string;
+}
+
 // Define the upload signature response structure
 export interface UploadSignatureResponse {
   signature: string;
@@ -36,14 +41,18 @@ export interface CloudinaryUploadResponse {
 }
 
 // Get file upload signature from the server
-export async function getUploadSignature(): Promise<
-  ApiResponse<UploadSignatureResponse>
-> {
+export async function getUploadSignature(
+  resourceType: string = "auto"
+): Promise<ApiResponse<UploadSignatureResponse>> {
   try {
     const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+    const requestBody: SignatureRequest = {
+      resourceType: resourceType,
+    };
+
     const response = await axios.post(
       `${API_URL}/uploads/file-signature`,
-      {},
+      requestBody,
       {
         headers: {
           Authorization: `Bearer ${token}`,

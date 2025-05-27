@@ -437,14 +437,26 @@ export default function HomePage() {
       setMessages((prevMessages) => [...prevMessages, tempMessage]);
 
       try {
-        // 1. Get upload signature from our API
-        const signatureResponse = await getUploadSignature();
+        // 1. Detect resource type based on file type
+        let resourceType = "auto"; // Default to auto
+        if (isImageFile(file)) {
+          resourceType = "image";
+        } else if (isVideoFile(file)) {
+          resourceType = "video";
+        } else if (isAudioFile(file)) {
+          resourceType = "raw"; // Audio files are typically uploaded as raw in Cloudinary
+        } else {
+          resourceType = "raw"; // Other files (documents, etc.) are uploaded as raw
+        }
+
+        // 2. Get upload signature from our API with detected resource type
+        const signatureResponse = await getUploadSignature(resourceType);
         const signatureData = signatureResponse.data;
 
-        // 2. Upload the file to Cloudinary
+        // 3. Upload the file to Cloudinary
         const uploadResult = await uploadFileToCloudinary(file, signatureData);
 
-        // 3. Prepare the message content based on file type
+        // 4. Prepare the message content based on file type
         let messageContent = "";
 
         if (isImageFile(file)) {
@@ -461,10 +473,10 @@ export default function HomePage() {
           messageContent = `[FILE:${uploadResult.secure_url}]${file.name}`;
         }
 
-        // 4. Send the message with file reference via socket
+        // 5. Send the message with file reference via socket
         socketService.sendMessage(selectedChat, messageContent);
 
-        // 5. Update the temporary message with the uploaded file information
+        // 6. Update the temporary message with the uploaded file information
         setMessages((prevMessages) =>
           prevMessages.map((msg) =>
             msg.id === tempId
