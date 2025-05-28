@@ -13,9 +13,10 @@ export default function MessageItem({ message }: MessageItemProps) {
         message.isMine ? "justify-end" : "justify-start"
       }`}
     >
+      {" "}
       {!message.isMine && (
         <div className="w-8 h-8 rounded-full overflow-hidden mr-2 mt-1">
-          <Avatar name={message.sender} avatarUrl={undefined} />
+          <Avatar name={message.sender_name} avatarUrl={message.avatar_url} />
         </div>
       )}
       <div
@@ -26,19 +27,20 @@ export default function MessageItem({ message }: MessageItemProps) {
         }`}
       >
         <div className="flex justify-between items-center mb-1">
+          {" "}
           <span
             className={`text-xs font-medium ${
               message.isMine ? "text-indigo-200" : "text-gray-500"
             }`}
           >
-            {message.isMine ? "You" : message.sender}
+            {message.isMine ? "You" : message.sender_name}
           </span>
           <span
             className={`text-xs ${
               message.isMine ? "text-indigo-200" : "text-gray-500"
             } ml-2`}
           >
-            {message.time}
+            {message.timestamp}
           </span>
         </div>
         <MessageContent message={message} />
