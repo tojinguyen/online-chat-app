@@ -213,12 +213,10 @@ export default function HomePage() {
           const newMessage: Message = {
             id: messageData.message_id || `msg_${Date.now()}`,
             conversationId: socketMessage.chat_room_id || "",
-            sender: socketMessage.sender_id, // Có thể cần lấy tên từ một nguồn khác nếu API chỉ trả về ID
+            sender_id: socketMessage.sender_id,
+            sender_name: socketMessage.sender_id, // Use sender_id as fallback for name
             content: messageData.content,
-            time: new Date(socketMessage.timestamp).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
+            timestamp: new Date(socketMessage.timestamp).toISOString(),
             isMine: socketMessage.sender_id === localStorage.getItem("userId"),
           };
 
@@ -380,12 +378,10 @@ export default function HomePage() {
         const tempMessage: Message = {
           id: `temp_${Date.now()}`,
           conversationId: selectedChat,
-          sender: userDetails?.fullName || "You", // Use fullName from userDetails
+          sender_id: userDetails?.userId || "current_user",
+          sender_name: userDetails?.fullName || "You", // Use fullName from userDetails
           content: messageText,
-          time: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          timestamp: new Date().toISOString(),
           isMine: true,
         };
 
@@ -424,16 +420,14 @@ export default function HomePage() {
       const tempMessage: Message = {
         id: tempId,
         conversationId: selectedChat,
-        sender: "You",
+        sender_id: userDetails?.userId || "current_user",
+        sender_name: "You",
         content: `📎 Uploading: ${file.name} (${(
           file.size /
           1024 /
           1024
         ).toFixed(2)} MB)...`,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+        timestamp: new Date().toISOString(),
         isMine: true,
       };
 

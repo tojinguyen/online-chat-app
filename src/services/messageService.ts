@@ -7,10 +7,13 @@ import { ApiResponse } from "./authService"; // Assuming this type is defined in
 export interface Message {
   id: string;
   conversationId: string;
-  sender: string;
+  sender_id: string;
+  sender_name: string;
   content: string;
-  time: string;
+  timestamp: string;
   isMine: boolean;
+  avatar_url?: string;
+  mime_type?: string;
 }
 
 // Define ChatRoom type based on the API specification
@@ -168,13 +171,13 @@ export async function getMessages(
           return {
             id: msg.id,
             conversationId,
-            sender: msg.sender_name,
+            sender_id: msg.sender_id,
+            sender_name: msg.sender_name,
             content: msg.content,
-            time: new Date(msg.created_at).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
+            timestamp: msg.created_at,
             isMine: msg.sender_id === currentUserId, // So sánh sender_id với ID người dùng hiện tại
+            avatar_url: msg.avatar_url,
+            mime_type: msg.mime_type,
           };
         }
       );
@@ -202,15 +205,15 @@ export async function getMessages(
       return {
         id: `msg_${conversationId}_${messageIndex}`,
         conversationId,
-        sender: isMine ? "You" : `User ${(messageIndex % 5) + 1}`,
+        sender_id: isMine ? "You" : `User ${(messageIndex % 5) + 1}`,
+        sender_name: isMine ? "You" : `User ${(messageIndex % 5) + 1}`,
         content: `This is message ${
           messageIndex + 1
         } for conversation ${conversationId}`,
-        time: new Date(Date.now() - messageIndex * 3600000).toLocaleTimeString(
-          [],
-          { hour: "2-digit", minute: "2-digit" }
-        ),
+        timestamp: new Date(Date.now() - messageIndex * 3600000).toISOString(),
         isMine,
+        avatar_url: isMine ? undefined : `https://example.com/avatar/${(messageIndex % 5) + 1}.jpg`,
+        mime_type: isMine ? "text/plain" : "text/html",
       };
     });
     return {

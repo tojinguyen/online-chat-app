@@ -1,13 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import MessageItem from "./MessageItem";
-
-interface Message {
-  id: string;
-  sender: string;
-  content: string;
-  time: string;
-  isMine: boolean;
-}
+import { Message } from "@/services/messageService";
 
 interface MessageListProps {
   messages: Message[];
@@ -34,10 +27,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
             {messages.map((message) => (
               <MessageItem
                 key={message.id}
-                id={message.id}
-                content={message.content}
-                time={message.time}
-                isMine={message.isMine}
+                message={message}
               />
             ))}
             <div ref={messagesEndRef} />
