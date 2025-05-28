@@ -52,12 +52,10 @@ export function useSocket(conversationId?: string) {
         const newMessage: Message = {
           id: chatData?.message_id || `socket_${Date.now()}`,
           conversationId: socketMsg.chat_room_id || "",
-          sender: socketMsg.sender_id,
+          sender_id: socketMsg.sender_id,
+          sender_name: socketMsg.sender_id, // Use sender_id as fallback for sender_name since it's not available in SocketMessage
           content: chatData?.content || "",
-          time: new Date(socketMsg.timestamp).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          timestamp: new Date(socketMsg.timestamp).toISOString(), // Convert number timestamp to ISO string
           isMine: socketMsg.sender_id === user,
         };
 
