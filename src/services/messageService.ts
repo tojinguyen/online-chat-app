@@ -2,7 +2,6 @@
 import { API_URL, AUTH_STORAGE_KEYS } from "@/constants/authConstants";
 import axios from "axios";
 import { ApiResponse } from "./authService"; // Assuming this type is defined in authService
-import { ChatMessagePayload, SocketMessage } from "./socketService";
 
 // Define Message type for the app
 export interface Message {
@@ -12,33 +11,6 @@ export interface Message {
   content: string;
   time: string;
   isMine: boolean;
-}
-
-// Helper function to convert SocketMessage to Message
-export function socketMessageToMessage(
-  socketMessage: SocketMessage
-): Message | null {
-  if (socketMessage.data) {
-    const chatData = socketMessage.data as unknown as ChatMessagePayload;
-    const currentUser = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
-    const currentUserId = currentUser ? JSON.parse(currentUser).userId : null;
-
-    return {
-      id: chatData.message_id || `socket_${Date.now()}`,
-      conversationId: socketMessage.chat_room_id || "",
-      sender:
-        socketMessage.sender_id === currentUserId
-          ? "You"
-          : socketMessage.sender_id,
-      content: chatData.content,
-      time: new Date(socketMessage.timestamp).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      isMine: socketMessage.sender_id === currentUserId,
-    };
-  }
-  return null;
 }
 
 // Define ChatRoom type based on the API specification
@@ -261,101 +233,6 @@ export async function getMessages(
         total_count: 0,
         page: 1,
         limit: 20,
-      },
-    };
-  }
-}
-
-// Send a message to a conversation
-export async function sendMessage(
-  conversationId: string,
-  content: string
-): Promise<ApiResponse<{ message: Message }>> {
-  try {
-    const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
-    const response = await axios.post(
-      `${API_URL}/chat-rooms/${conversationId}/messages`,
-      { content },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    if (response.data.success) {
-      // Transform API response to match our Message type
-      const messageData =
-        Array.isArray(response.data.data) && response.data.data.length > 0
-          ? response.data.data[0]
-          : response.data.data; // Lấy thông tin người dùng hiện tại từ localStorage
-      const currentUser = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
-      const currentUserId = currentUser ? JSON.parse(currentUser).userId : null;
-
-      console.log("Send Message - Current user ID:", currentUserId);
-      console.log(
-        `Send Message - Message sender_id: "${
-          messageData.sender_id
-        }" (type: ${typeof messageData.sender_id})`
-      );
-      console.log(
-        `Send Message - Current user ID: "${currentUserId}" (type: ${typeof currentUserId})`
-      );
-      console.log(
-        `Send Message - Are they equal?: ${
-          messageData.sender_id === currentUserId
-        }`
-      );
-
-      const message: Message = {
-        id: messageData.id,
-        conversationId,
-        sender: messageData.sender_name || "You", // Use sender_name from API or fallback to "You"
-        content: messageData.content,
-        time: new Date(messageData.created_at).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        isMine: messageData.sender_id === currentUserId, // So sánh sender_id với ID người dùng hiện tại
-      };
-
-      // Note: We don't need to emit via socket here since the server will broadcast
-      // the message back to all clients including the sender after receiving HTTP request
-
-      return {
-        success: true,
-        message: "Message sent successfully",
-        data: {
-          message,
-        },
-      };
-    } // Fallback to mock data if API call fails
-    console.log("Using mock message data for development");
-
-    const mockMessage: Message = {
-      id: `msg_${Date.now()}`,
-      conversationId,
-      sender: "You",
-      content,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      isMine: true, // Luôn đặt isMine = true cho tin nhắn giả lập do người dùng gửi
-    };
-    return {
-      success: true,
-      message: "Message sent successfully",
-      data: {
-        message: mockMessage,
-      },
-    };
-  } catch (error) {
-    console.error("Error sending message:", error);
-    return {
-      success: false,
-      message: "Failed to send message",
-      data: {
-        message: {} as Message,
       },
     };
   }

@@ -48,7 +48,21 @@ export default function ChatSection({
 
   // Combine API-loaded messages with real-time socket messages
   useEffect(() => {
-    setAllMessages([...initialMessages, ...socketMessages]);
+    // Create a map to deduplicate messages by ID
+    const messageMap = new Map<string, Message>();
+
+    // Add initial messages first
+    initialMessages.forEach((message) => {
+      messageMap.set(message.id, message);
+    });
+
+    // Add socket messages, which will overwrite any duplicates
+    socketMessages.forEach((message) => {
+      messageMap.set(message.id, message);
+    });
+
+    // Convert back to array
+    setAllMessages(Array.from(messageMap.values()));
   }, [initialMessages, socketMessages]);
 
   // Update error state when props change
