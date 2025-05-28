@@ -220,7 +220,11 @@ export default function HomePage() {
             isMine: socketMessage.sender_id === localStorage.getItem("userId"),
           };
 
-          setMessages((prevMessages) => [...prevMessages, newMessage]);
+          // Chỉ thêm tin nhắn từ người khác, không thêm tin nhắn của chính mình từ socket
+          // vì đã được thêm tạm thời trong handleSendMessage
+          if (!newMessage.isMine) {
+            setMessages((prevMessages) => [...prevMessages, newMessage]);
+          }
         }
       });
 
