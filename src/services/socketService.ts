@@ -672,11 +672,15 @@ class SocketService {
       return;
     }
 
+    // Lấy ID người dùng từ localStorage đúng cách
+    const currentUser = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+    const currentUserId = currentUser ? JSON.parse(currentUser).userId : "";
+
     // Gửi dữ liệu theo đúng cấu trúc SocketMessage với JoinPayload
     this.sendRaw({
       type: SocketMessageType.JOIN,
       chat_room_id: conversationId,
-      sender_id: localStorage.getItem("userId") || "",
+      sender_id: currentUserId,
       timestamp: Date.now(),
       data: {
         room_id: conversationId,
@@ -688,11 +692,15 @@ class SocketService {
   leaveChatRoom(conversationId: string, reason: string = "User left"): void {
     if (!this.isConnected()) return;
 
+    // Lấy ID người dùng từ localStorage đúng cách
+    const currentUser = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+    const currentUserId = currentUser ? JSON.parse(currentUser).userId : "";
+
     // Gửi dữ liệu theo đúng cấu trúc SocketMessage với LeavePayload
     this.sendRaw({
       type: SocketMessageType.LEAVE,
       chat_room_id: conversationId,
-      sender_id: localStorage.getItem("userId") || "",
+      sender_id: currentUserId,
       timestamp: Date.now(),
       data: {
         reason: reason,
@@ -704,11 +712,15 @@ class SocketService {
   sendReadReceipt(conversationId: string, messageId: string): void {
     if (!this.isConnected()) return;
 
+    // Lấy ID người dùng từ localStorage đúng cách
+    const currentUser = localStorage.getItem(AUTH_STORAGE_KEYS.USER);
+    const currentUserId = currentUser ? JSON.parse(currentUser).userId : "";
+
     // Gửi dữ liệu theo đúng cấu trúc SocketMessage với ReadReceiptPayload
     this.sendRaw({
       type: SocketMessageType.READ_RECEIPT,
       chat_room_id: conversationId,
-      sender_id: localStorage.getItem("userId") || "",
+      sender_id: currentUserId,
       timestamp: Date.now(),
       data: {
         message_id: messageId,

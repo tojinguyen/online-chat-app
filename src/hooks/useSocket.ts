@@ -7,7 +7,7 @@ import socketService, {
 import { useCallback, useEffect, useState } from "react";
 
 export function useSocket(conversationId?: string) {
-  const { user } = useAuth();
+  const { user, userDetails } = useAuth();
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>(
     socketService.getConnectionStatus()
   );
@@ -56,7 +56,7 @@ export function useSocket(conversationId?: string) {
           sender_name: socketMsg.sender_id, // Use sender_id as fallback for sender_name since it's not available in SocketMessage
           content: chatData?.content || "",
           timestamp: new Date(socketMsg.timestamp).toISOString(), // Convert number timestamp to ISO string
-          isMine: socketMsg.sender_id === user,
+          isMine: socketMsg.sender_id === userDetails?.userId,
         };
 
         setMessages((prev) => [...prev, newMessage]);
@@ -79,7 +79,7 @@ export function useSocket(conversationId?: string) {
       unsubMessage();
       unsubTyping();
     };
-  }, [user, conversationId]);
+  }, [user, conversationId, userDetails?.userId]);
 
   // Send a new message
   const sendMessage = useCallback(

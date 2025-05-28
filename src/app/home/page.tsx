@@ -211,10 +211,13 @@ export default function HomePage() {
             socketMessage.data as unknown as ChatMessagePayload;
 
           // Lấy ID người dùng hiện tại từ localStorage
-          const currentUserId = localStorage.getItem("userId");
+          const currentUser = localStorage.getItem("user");
+          const currentUserId = currentUser
+            ? JSON.parse(currentUser).userId
+            : null;
           console.log("Current user ID:", currentUserId);
           console.log("Message sender ID:", socketMessage.sender_id);
-          
+
           // Kiểm tra xem tin nhắn có phải của người dùng hiện tại không
           const isMine = currentUserId === socketMessage.sender_id;
           console.log("Is message from current user:", isMine);
