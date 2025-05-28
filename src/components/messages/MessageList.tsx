@@ -18,6 +18,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
+    console.log("Messages updated in MessageList:", messages); // Debug log
     scrollToBottom();
   }, [messages]);
 
@@ -28,9 +29,9 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
   return (
     <div className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col">
       <div className="space-y-3 flex flex-col flex-1">
-        {messages.length > 0 ? (
+        {messages && messages.length > 0 ? (
           <>
-            {[...messages].reverse().map((message) => (
+            {messages.map((message) => (
               <MessageItem
                 key={message.id}
                 id={message.id}

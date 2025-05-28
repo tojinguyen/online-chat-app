@@ -47,7 +47,7 @@ interface Conversation {
 }
 
 export default function HomePage() {
-  const { user, logout } = useAuth();
+  const { user, logout, userDetails } = useAuth();
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -380,7 +380,7 @@ export default function HomePage() {
         const tempMessage: Message = {
           id: `temp_${Date.now()}`,
           conversationId: selectedChat,
-          sender: "You",
+          sender: userDetails?.fullName || "You", // Use fullName from userDetails
           content: messageText,
           time: new Date().toLocaleTimeString([], {
             hour: "2-digit",
@@ -389,8 +389,12 @@ export default function HomePage() {
           isMine: true,
         };
 
-        // Thêm tin nhắn tạm thời vào danh sách
-        setMessages((prevMessages) => [...prevMessages, tempMessage]);
+        // Thêm tin nhắn tạm thời vào đầu danh sách và đảm bảo state được cập nhật
+        setMessages((prevMessages) => {
+          const newMessages = [tempMessage, ...prevMessages];
+          console.log("Updated messages:", newMessages); // Debug log
+          return newMessages;
+        });
 
         // Xóa nội dung tin nhắn sau khi gửi
         setMessageText("");
