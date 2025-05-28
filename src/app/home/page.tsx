@@ -210,28 +210,29 @@ export default function HomePage() {
           const messageData =
             socketMessage.data as unknown as ChatMessagePayload;
 
+          // Lấy ID người dùng hiện tại từ localStorage
+          const currentUserId = localStorage.getItem("userId");
+          console.log("Current user ID:", currentUserId);
+          console.log("Message sender ID:", socketMessage.sender_id);
+          
+          // Kiểm tra xem tin nhắn có phải của người dùng hiện tại không
+          const isMine = currentUserId === socketMessage.sender_id;
+          console.log("Is message from current user:", isMine);
+
           const newMessage: Message = {
             id: messageData.message_id || `msg_${Date.now()}`,
             conversationId: socketMessage.chat_room_id || "",
             sender_id: socketMessage.sender_id,
-            sender_name: socketMessage.sender_id, // Use sender_id as fallback for name
+            sender_name: isMine ? "You" : socketMessage.sender_id,
             content: messageData.content,
             timestamp: new Date(socketMessage.timestamp).toISOString(),
-            isMine: socketMessage.sender_id === localStorage.getItem("userId"),
+            isMine: isMine,
           };
 
-          // Chỉ thêm tin nhắn từ người khác, không thêm tin nhắn của chính mình từ socket
-          // vì đã được thêm tạm thời trong handleSendMessage
-          if (!newMessage.isMine) {
-            setMessages((prevMessages) => [...prevMessages, newMessage]);
-          } else {
-            // Nếu là tin nhắn của mình, cập nhật tin nhắn tạm thời với ID thật từ server
-            setMessages((prevMessages) =>
-              prevMessages.map((msg) =>
-                msg.id.startsWith("temp_") ? { ...msg, id: newMessage.id } : msg
-              )
-            );
-          }
+          console.log("New message object:", newMessage);
+
+          // Thêm tin nhắn vào đầu danh sách
+          setMessages((prevMessages) => [newMessage, ...prevMessages]);
         }
       });
 
@@ -384,24 +385,6 @@ export default function HomePage() {
       try {
         // Gửi tin nhắn qua socket thay vì qua API
         socketService.sendMessage(selectedChat, messageText);
-
-        // Tạo tin nhắn tạm thời để hiển thị ngay trong UI
-        const tempMessage: Message = {
-          id: `temp_${Date.now()}`,
-          conversationId: selectedChat,
-          sender_id: userDetails?.userId || "current_user",
-          sender_name: userDetails?.fullName || "You", // Use fullName from userDetails
-          content: messageText,
-          timestamp: new Date().toISOString(),
-          isMine: true,
-        };
-
-        // Thêm tin nhắn tạm thời vào đầu danh sách và đảm bảo state được cập nhật
-        setMessages((prevMessages) => {
-          const newMessages = [tempMessage, ...prevMessages];
-          console.log("Updated messages:", newMessages); // Debug log
-          return newMessages;
-        });
 
         // Xóa nội dung tin nhắn sau khi gửi
         setMessageText("");
