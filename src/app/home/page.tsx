@@ -224,6 +224,13 @@ export default function HomePage() {
           // vì đã được thêm tạm thời trong handleSendMessage
           if (!newMessage.isMine) {
             setMessages((prevMessages) => [...prevMessages, newMessage]);
+          } else {
+            // Nếu là tin nhắn của mình, cập nhật tin nhắn tạm thời với ID thật từ server
+            setMessages((prevMessages) =>
+              prevMessages.map((msg) =>
+                msg.id.startsWith("temp_") ? { ...msg, id: newMessage.id } : msg
+              )
+            );
           }
         }
       });
