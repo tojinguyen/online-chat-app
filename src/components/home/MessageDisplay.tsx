@@ -7,6 +7,7 @@ interface MessageDisplayProps {
   isLoading: boolean;
   error: string | null;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  isLoadingMore?: boolean;
 }
 
 export default function MessageDisplay({
@@ -14,9 +15,17 @@ export default function MessageDisplay({
   isLoading,
   error,
   messagesEndRef,
+  isLoadingMore = false,
 }: MessageDisplayProps) {
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50">
+      {/* Loading more indicator - positioned at top with minimal space */}
+      {isLoadingMore && (
+        <div className="sticky top-0 z-10 flex justify-center py-1 bg-gray-50/90 backdrop-blur-sm">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+        </div>
+      )}
+
       <div className="p-4 flex flex-col space-y-4">
         {isLoading ? (
           <div className="flex justify-center items-center h-full">
@@ -33,7 +42,9 @@ export default function MessageDisplay({
         ) : (
           [...messages]
             .reverse()
-            .map((message) => <MessageItem key={message.id} message={message} />)
+            .map((message) => (
+              <MessageItem key={message.id} message={message} />
+            ))
         )}
         <div ref={messagesEndRef} />
       </div>

@@ -107,7 +107,13 @@ export default function ChatSection({
 
   // Handle scroll to load more messages
   const handleScroll = async () => {
-    if (!messagesContainerRef.current || !onLoadMore || isLoadingMore || !hasMore) return;
+    if (
+      !messagesContainerRef.current ||
+      !onLoadMore ||
+      isLoadingMore ||
+      !hasMore
+    )
+      return;
 
     const { scrollTop } = messagesContainerRef.current;
     if (scrollTop === 0) {
@@ -150,21 +156,17 @@ export default function ChatSection({
       />
 
       <div className="flex-1 flex flex-col min-h-0">
-        <div 
+        <div
           ref={messagesContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto relative"
         >
-          {isLoadingMore && (
-            <div className="flex justify-center py-2">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
-            </div>
-          )}
           <MessageDisplay
             messages={allMessages}
             isLoading={isLoading}
             error={error}
             messagesEndRef={messagesEndRef}
+            isLoadingMore={isLoadingMore}
           />
         </div>
 
