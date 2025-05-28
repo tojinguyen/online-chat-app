@@ -39,6 +39,7 @@ export default function ChatSection({
   const [allMessages, setAllMessages] = useState<Message[]>(initialMessages);
   const [error, setError] = useState<string | null>(initialError);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [oldScrollHeight, setOldScrollHeight] = useState(0);
 
   // Reference to scroll to the latest message
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -80,8 +81,15 @@ export default function ChatSection({
   useEffect(() => {
     if (!isLoadingMore) {
       scrollToBottom();
+    } else {
+      // Maintain scroll position when loading more messages
+      if (messagesContainerRef.current) {
+        const newScrollHeight = messagesContainerRef.current.scrollHeight;
+        const scrollDiff = newScrollHeight - oldScrollHeight;
+        messagesContainerRef.current.scrollTop = scrollDiff;
+      }
     }
-  }, [allMessages, isLoadingMore]);
+  }, [allMessages, isLoadingMore, oldScrollHeight]);
 
   // Initial scroll to bottom when component mounts or chat changes
   useEffect(() => {
@@ -103,6 +111,8 @@ export default function ChatSection({
 
     const { scrollTop } = messagesContainerRef.current;
     if (scrollTop === 0) {
+      // Store current scroll height before loading more messages
+      setOldScrollHeight(messagesContainerRef.current.scrollHeight);
       setIsLoadingMore(true);
       try {
         await onLoadMore();

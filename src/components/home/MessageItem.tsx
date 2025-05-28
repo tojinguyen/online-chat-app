@@ -26,23 +26,6 @@ export default function MessageItem({ message }: MessageItemProps) {
             : "bg-gray-100 text-gray-800"
         }`}
       >
-        <div className="flex justify-between items-center mb-1">
-          {" "}
-          <span
-            className={`text-xs font-medium ${
-              message.isMine ? "text-indigo-200" : "text-gray-500"
-            }`}
-          >
-            {message.isMine ? "You" : message.sender_name}
-          </span>
-          <span
-            className={`text-xs ${
-              message.isMine ? "text-indigo-200" : "text-gray-500"
-            } ml-2`}
-          >
-            {message.timestamp}
-          </span>
-        </div>
         <MessageContent message={message} />
       </div>
     </div>
