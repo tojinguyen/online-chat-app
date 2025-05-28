@@ -76,8 +76,7 @@ export default function ChatInput({
               d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
             />
           </svg>
-        </button>
-
+        </button>{" "}
         <input
           type="text"
           placeholder="Type your message..."
@@ -115,12 +114,15 @@ export default function ChatInput({
               sendTypingStatus(false);
             }
           }}
-          autoComplete="off"
+          autoComplete="new-password"
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck={false}
           data-form-type="other"
           data-lpignore="true"
+          data-1p-ignore="true"
+          name="message"
+          role="textbox"
         />
         <button
           onClick={() => {
