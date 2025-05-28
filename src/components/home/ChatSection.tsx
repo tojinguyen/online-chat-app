@@ -17,6 +17,8 @@ interface ChatSectionProps {
   onFileUpload?: (files: FileList) => void;
   isLoading?: boolean;
   error?: string | null;
+  onLoadMore?: () => Promise<void>;
+  hasMore?: boolean;
 }
 
 export default function ChatSection({
@@ -30,13 +32,17 @@ export default function ChatSection({
   onFileUpload,
   isLoading = false,
   error: initialError = null,
+  onLoadMore,
+  hasMore = false,
 }: ChatSectionProps) {
   // State to combine initial and socket messages
   const [allMessages, setAllMessages] = useState<Message[]>(initialMessages);
   const [error, setError] = useState<string | null>(initialError);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Reference to scroll to the latest message
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Connect to socket for real-time updates when chat is selected
   const {
@@ -72,8 +78,10 @@ export default function ChatSection({
 
   // Scroll to bottom whenever messages change
   useEffect(() => {
-    scrollToBottom();
-  }, [allMessages]);
+    if (!isLoadingMore) {
+      scrollToBottom();
+    }
+  }, [allMessages, isLoadingMore]);
 
   // Initial scroll to bottom when component mounts or chat changes
   useEffect(() => {
@@ -87,6 +95,21 @@ export default function ChatSection({
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Handle scroll to load more messages
+  const handleScroll = async () => {
+    if (!messagesContainerRef.current || !onLoadMore || isLoadingMore || !hasMore) return;
+
+    const { scrollTop } = messagesContainerRef.current;
+    if (scrollTop === 0) {
+      setIsLoadingMore(true);
+      try {
+        await onLoadMore();
+      } finally {
+        setIsLoadingMore(false);
+      }
+    }
   };
 
   // Handle typing indicator
@@ -117,12 +140,23 @@ export default function ChatSection({
       />
 
       <div className="flex-1 flex flex-col min-h-0">
-        <MessageDisplay
-          messages={allMessages}
-          isLoading={isLoading}
-          error={error}
-          messagesEndRef={messagesEndRef}
-        />
+        <div 
+          ref={messagesContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto"
+        >
+          {isLoadingMore && (
+            <div className="flex justify-center py-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+            </div>
+          )}
+          <MessageDisplay
+            messages={allMessages}
+            isLoading={isLoading}
+            error={error}
+            messagesEndRef={messagesEndRef}
+          />
+        </div>
 
         <ChatInput
           messageText={messageText}

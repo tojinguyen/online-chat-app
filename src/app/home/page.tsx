@@ -71,6 +71,9 @@ export default function HomePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [messagesError, setMessagesError] = useState<string | null>(null);
+  const [messagesPage, setMessagesPage] = useState(1);
+  const [messagesLimit] = useState(20);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
 
   // Chat rooms state
   const [chatRooms, setChatRooms] = useState<Conversation[]>([]);
@@ -172,13 +175,24 @@ export default function HomePage() {
   };
 
   // Load messages for a chat
-  const loadMessages = async (chatId: string) => {
+  const loadMessages = async (chatId: string, page: number = 1) => {
     setLoadingMessages(true);
     setMessagesError(null);
     try {
-      const response = await getMessages(chatId);
+      const response = await getMessages(chatId, page, messagesLimit);
       if (response.success) {
-        setMessages(response.data.messages);
+        if (page === 1) {
+          // For first page, just set the messages
+          setMessages(response.data.messages);
+        } else {
+          // For subsequent pages, append older messages to the end
+          setMessages(prev => [...prev, ...response.data.messages]);
+        }
+        
+        // Check if there are more messages to load
+        setHasMoreMessages(response.data.messages.length === messagesLimit);
+        setMessagesPage(page);
+        
         console.log("Loaded messages:", response.data.messages);
       } else {
         console.error("Failed to load messages:", response.message);
@@ -190,6 +204,12 @@ export default function HomePage() {
     } finally {
       setLoadingMessages(false);
     }
+  };
+
+  // Load more messages when scrolling up
+  const handleLoadMoreMessages = async () => {
+    if (!selectedChat || loadingMessages || !hasMoreMessages) return;
+    await loadMessages(selectedChat, messagesPage + 1);
   };
 
   // Initialize and clean up socket connection when user logs in/out
@@ -359,7 +379,10 @@ export default function HomePage() {
   // Load messages when a chat is selected
   useEffect(() => {
     if (selectedChat) {
-      loadMessages(selectedChat);
+      // Reset pagination when selecting a new chat
+      setMessagesPage(1);
+      setHasMoreMessages(true);
+      loadMessages(selectedChat, 1);
 
       // Join the chat room via socket when a chat is selected
       socketService.joinChatRoom(selectedChat);
@@ -618,6 +641,8 @@ export default function HomePage() {
             onFileUpload={handleFileUpload}
             isLoading={loadingMessages}
             error={messagesError}
+            onLoadMore={handleLoadMoreMessages}
+            hasMore={hasMoreMessages}
           />
         ) : (
           <EmptyState
