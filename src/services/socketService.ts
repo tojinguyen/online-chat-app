@@ -492,7 +492,6 @@ class SocketService {
     this.attemptReconnect();
   }
 
-  // Attempt to reconnect with exponential backoff and token refresh if needed
   private async refreshTokenAndReconnect(): Promise<boolean> {
     try {
       const refreshToken = localStorage.getItem(
@@ -547,7 +546,6 @@ class SocketService {
     }
   }
 
-  // Attempt to reconnect with exponential backoff
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error("Maximum reconnection attempts reached");
