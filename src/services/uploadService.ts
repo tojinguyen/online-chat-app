@@ -22,6 +22,7 @@ export interface UploadSignatureResponse {
   cloud_name: string;
   folder: string;
   public_id?: string;
+  resource_type?: string; // Optional, defaults to "auto"
 }
 
 // Define the Cloudinary upload response structure
