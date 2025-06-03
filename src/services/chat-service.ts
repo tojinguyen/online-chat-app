@@ -37,12 +37,14 @@ export const chatService = {
   getChatRoomById: async (roomId: string): Promise<ApiResponse<ChatRoom>> => {
     return await apiClient.get<ChatRoom>(CHAT_API_ENDPOINTS.CHAT_ROOM(roomId));
   },
-
   // Create a new chat room
   createChatRoom: async (
     data: ChatRoomCreateRequest
   ): Promise<ApiResponse<ChatRoom>> => {
-    return await apiClient.post<ChatRoom>(CHAT_API_ENDPOINTS.CHAT_ROOMS, data);
+    return await apiClient.post<ChatRoom, ChatRoomCreateRequest>(
+      CHAT_API_ENDPOINTS.CHAT_ROOMS,
+      data
+    );
   },
 
   // Get or create a private chat room with another user
@@ -66,13 +68,12 @@ export const chatService = {
       `${CHAT_API_ENDPOINTS.CHAT_ROOM_MESSAGES(roomId)}${queryParams}`
     );
   },
-
   // Add members to a chat room
   addChatRoomMembers: async (
     roomId: string,
     data: ChatRoomMembersRequest
   ): Promise<ApiResponse<ChatRoom>> => {
-    return await apiClient.post<ChatRoom>(
+    return await apiClient.post<ChatRoom, ChatRoomMembersRequest>(
       CHAT_API_ENDPOINTS.CHAT_ROOM_MEMBERS(roomId),
       data
     );
