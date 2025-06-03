@@ -20,13 +20,14 @@ export const useFriends = () => {
 
       if (response.success) {
         if (pageNum === 1) {
-          setFriends(response.data.data);
+          setFriends(response.data);
         } else {
-          setFriends((prev) => [...prev, ...response.data.data]);
+          setFriends((prev) => [...prev, ...response.data]);
         }
 
-        setTotalCount(response.data.total_count);
-        setHasMore(response.data.data.length === limit);
+        // Since we don't have total_count in the response, we'll use the length of the friends array
+        setTotalCount(response.data.length);
+        setHasMore(response.data.length === limit);
       } else {
         setError(response.message);
       }

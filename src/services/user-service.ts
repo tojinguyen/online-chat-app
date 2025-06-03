@@ -4,7 +4,6 @@ import {
   ApiResponse,
   Friend,
   FriendRequest,
-  PaginatedResponse,
   UserProfile,
   UserSearchParams,
   UserSearchResult,
@@ -27,7 +26,7 @@ export const userService = {
   searchUsers: async (
     params: UserSearchParams
   ): Promise<ApiResponse<UserSearchResult>> => {
-    const queryParams = `?query=${encodeURIComponent(params.query)}&page=${
+    const queryParams = `?name=${encodeURIComponent(params.query)}&page=${
       params.page
     }&limit=${params.limit}`;
     return await apiClient.get<UserSearchResult>(
@@ -46,9 +45,9 @@ export const userService = {
   getFriends: async (
     page: number,
     limit: number
-  ): Promise<ApiResponse<PaginatedResponse<Friend>>> => {
+  ): Promise<ApiResponse<Friend[]>> => {
     const queryParams = `?page=${page}&limit=${limit}`;
-    return await apiClient.get<PaginatedResponse<Friend>>(
+    return await apiClient.get<Friend[]>(
       `${USER_API_ENDPOINTS.FRIENDS}${queryParams}`
     );
   },
