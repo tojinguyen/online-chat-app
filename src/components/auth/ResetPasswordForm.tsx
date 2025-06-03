@@ -1,3 +1,6 @@
+"use client";
+
+// filepath: d:\WEB\PROJECTS\online-chat-app\src\components\auth\ResetPasswordForm.tsx
 import { AUTH_CONSTANTS } from "@/constants";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";

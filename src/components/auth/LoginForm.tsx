@@ -1,3 +1,6 @@
+"use client";
+
+// filepath: d:\WEB\PROJECTS\online-chat-app\src\components\auth\LoginForm.tsx
 import { AUTH_CONSTANTS } from "@/constants";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
