@@ -96,7 +96,7 @@ export default function DashboardLayout({
             </li>
             <li>
               <Link
-                href="#"
+                href="/chat"
                 className="flex items-center text-slate-700 hover:bg-primary-50 hover:text-primary-700 px-4 py-2"
               >
                 <svg
