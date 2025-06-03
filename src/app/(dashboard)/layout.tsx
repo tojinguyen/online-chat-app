@@ -12,11 +12,11 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar */}
+      {/* Sidebar - fixed, no scroll */}
       <aside
         className={`${
           isSidebarOpen ? "w-64" : "w-20"
-        } bg-white shadow-md transition-all duration-300 flex flex-col`}
+        } bg-white shadow-md transition-all duration-300 flex flex-col h-screen sticky top-0`}
       >
         <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <h1
@@ -156,8 +156,8 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-auto p-6">
+      {/* Main content - scrollable */}
+      <main className="flex-1 overflow-y-auto p-6 h-screen">
         <div className="max-w-7xl mx-auto">{children}</div>
       </main>
     </div>
