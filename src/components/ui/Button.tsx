@@ -2,12 +2,13 @@ import { ButtonHTMLAttributes, ReactNode } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "link";
-  size?: "sm" | "md" | "lg";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "link" | "gradient";
+  size?: "xs" | "sm" | "md" | "lg";
   isLoading?: boolean;
   fullWidth?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
+  rounded?: boolean;
 }
 
 export const Button = ({
@@ -18,38 +19,43 @@ export const Button = ({
   fullWidth = false,
   leftIcon,
   rightIcon,
+  rounded = false,
   className = "",
   disabled,
   ...props
 }: ButtonProps) => {
   const baseStyles =
-    "font-medium rounded-md focus:outline-none transition-colors duration-200 flex items-center justify-center";
+    "font-medium focus:outline-none transition-all duration-200 flex items-center justify-center shadow-button";
 
   const variantStyles = {
     primary:
-      "bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50",
+      "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50",
     secondary:
-      "bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50",
+      "bg-secondary-500 text-white hover:bg-secondary-600 active:bg-secondary-700 focus:ring-2 focus:ring-secondary-400 focus:ring-opacity-50",
     outline:
-      "bg-transparent border border-blue-600 text-blue-600 hover:bg-blue-50 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50",
+      "bg-transparent border-2 border-primary-500 text-primary-600 hover:bg-primary-50 active:bg-primary-100 focus:ring-2 focus:ring-primary-500 focus:ring-opacity-40",
     ghost:
-      "bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50",
-    link: "bg-transparent text-blue-600 hover:underline p-0 h-auto focus:ring-0",
+      "bg-transparent text-slate-700 hover:bg-slate-100 active:bg-slate-200 focus:ring-2 focus:ring-slate-500 focus:ring-opacity-30 shadow-none",
+    link: "bg-transparent text-primary-600 hover:text-primary-700 underline-offset-2 hover:underline p-0 h-auto focus:ring-0 shadow-none",
+    gradient:
+      "text-white bg-gradient-to-r from-primary-600 to-secondary-500 hover:from-primary-700 hover:to-secondary-600 active:from-primary-800 active:to-secondary-700 focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50",
   };
 
   const sizeStyles = {
-    sm: "text-sm px-3 py-2",
-    md: "text-base px-4 py-2",
-    lg: "text-lg px-6 py-3",
+    xs: "text-xs px-2.5 py-1.5 rounded",
+    sm: "text-sm px-3 py-2 rounded-md",
+    md: "text-base px-4 py-2.5 rounded-lg",
+    lg: "text-lg px-6 py-3 rounded-xl",
   };
 
+  const roundedStyle = rounded ? "rounded-full" : "";
   const widthStyle = fullWidth ? "w-full" : "";
-  const loadingStyle = isLoading ? "opacity-70 cursor-not-allowed" : "";
-  const disabledStyle = disabled ? "opacity-50 cursor-not-allowed" : "";
+  const loadingStyle = isLoading ? "opacity-80 cursor-not-allowed" : "";
+  const disabledStyle = disabled ? "opacity-60 cursor-not-allowed" : "";
 
   return (
     <button
-      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${widthStyle} ${loadingStyle} ${disabledStyle} ${className}`}
+      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${roundedStyle} ${widthStyle} ${loadingStyle} ${disabledStyle} ${className}`}
       disabled={isLoading || disabled}
       {...props}
     >
@@ -80,7 +86,7 @@ export const Button = ({
       ) : (
         <div className="flex items-center justify-center">
           {leftIcon && <span className="mr-2">{leftIcon}</span>}
-          {children}
+          <span>{children}</span>
           {rightIcon && <span className="ml-2">{rightIcon}</span>}
         </div>
       )}

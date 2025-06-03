@@ -6,6 +6,7 @@ interface PasswordInputProps extends InputHTMLAttributes<HTMLInputElement> {
   fullWidth?: boolean;
   togglePassword: () => void;
   isPasswordVisible: boolean;
+  helpText?: string;
 }
 
 export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
@@ -17,23 +18,24 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
       className = "",
       togglePassword,
       isPasswordVisible,
+      helpText,
       ...props
     },
     ref
   ) => {
     const inputBaseStyle =
-      "rounded-md border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-gray-900 placeholder-gray-400 py-2 pr-10 pl-3 transition duration-150 ease-in-out";
+      "rounded-lg shadow-input border-2 border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-400 focus:ring-opacity-30 text-slate-800 placeholder-slate-400 py-2.5 pr-10 pl-3 transition-all duration-200 ease-in-out";
     const errorStyle = error
-      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+      ? "border-red-400 focus:border-red-500 focus:ring-red-400 focus:ring-opacity-30"
       : "";
     const widthStyle = fullWidth ? "w-full" : "";
 
     return (
-      <div className={`${widthStyle}`}>
+      <div className={`${widthStyle} mb-4`}>
         {label && (
           <label
             htmlFor={props.id}
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-slate-700 mb-1.5"
           >
             {label}
           </label>
@@ -49,7 +51,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             <button
               type="button"
               onClick={togglePassword}
-              className="text-gray-500 hover:text-gray-600 focus:outline-none"
+              className="text-slate-500 hover:text-slate-700 focus:outline-none focus:text-slate-700"
+              aria-label={isPasswordVisible ? "Hide password" : "Show password"}
             >
               {isPasswordVisible ? (
                 <svg
@@ -90,7 +93,12 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             </button>
           </div>
         </div>
-        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}{" "}
+        {helpText && !error && (
+          <p className="mt-1.5 text-sm text-slate-500">{helpText}</p>
+        )}
+        {error && (
+          <p className="mt-1.5 text-sm text-red-600 font-medium">{error}</p>
+        )}
       </div>
     );
   }
