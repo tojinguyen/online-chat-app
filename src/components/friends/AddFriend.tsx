@@ -2,7 +2,7 @@
 
 import { Button, Input } from "@/components/ui";
 import { userService } from "@/services";
-import { AlertCircle, Search, UserPlus } from "lucide-react";
+import { AlertCircle, CheckCircle, Search, UserPlus } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 
@@ -76,59 +76,71 @@ export const AddFriend: React.FC<AddFriendProps> = ({ onSuccess }) => {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-4">Find Friends</h2>
-      <div className="flex gap-2 mb-4">
-        {" "}
+      <h2 className="text-xl font-semibold mb-5 text-gray-800 flex items-center">
+        <UserPlus size={20} className="mr-2 text-blue-500" />
+        Find Friends
+      </h2>
+      <div className="flex gap-3 mb-5">
         <Input
           placeholder="Search by name or email"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1"
-          leftIcon={<Search size={18} />}
+          className="flex-1 shadow-sm"
+          leftIcon={<Search size={18} className="text-gray-400" />}
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
         />
         <Button
           onClick={handleSearch}
           disabled={isSearching || !searchQuery.trim()}
+          className="px-5 shadow-sm hover:shadow transition-shadow"
         >
-          {isSearching ? "Searching..." : "Search"}
+          {isSearching ? (
+            <>
+              <span className="animate-spin inline-block h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></span>
+              Searching...
+            </>
+          ) : (
+            "Search"
+          )}
         </Button>
       </div>
       {error && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md flex items-center">
-          <AlertCircle size={16} className="mr-2" />
-          {error}
+        <div className="mb-5 p-4 bg-red-50 text-red-700 rounded-md flex items-center border border-red-200">
+          <AlertCircle size={18} className="mr-2 flex-shrink-0" />
+          <span>{error}</span>
         </div>
       )}
       {success && (
-        <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-md">
-          {success}
+        <div className="mb-5 p-4 bg-green-50 text-green-700 rounded-md flex items-center border border-green-200">
+          <CheckCircle size={18} className="mr-2 flex-shrink-0" />
+          <span>{success}</span>
         </div>
       )}
       {searchResults.length > 0 && (
-        <div className="mt-4 border rounded-md divide-y">
+        <div className="mt-5 border rounded-lg divide-y overflow-hidden shadow-sm">
           {searchResults.map((user) => (
             <div
               key={user.id}
-              className="p-3 flex justify-between items-center hover:bg-gray-50"
+              className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors duration-200"
             >
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                  {" "}
+              <div className="flex items-center space-x-4">
+                <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
                   {user.avatar_url ? (
                     <Image
                       src={user.avatar_url}
                       alt={user.name}
                       className="h-full w-full object-cover"
-                      width={40}
-                      height={40}
+                      width={48}
+                      height={48}
                     />
                   ) : (
-                    <span className="text-gray-500">{user.name.charAt(0)}</span>
+                    <span className="text-gray-500 text-lg font-semibold">
+                      {user.name.charAt(0)}
+                    </span>
                   )}
                 </div>
                 <div>
-                  <p className="font-medium">{user.name}</p>
+                  <p className="font-semibold text-gray-900">{user.name}</p>
                   <p className="text-sm text-gray-500">{user.email}</p>
                 </div>
               </div>
@@ -137,23 +149,32 @@ export const AddFriend: React.FC<AddFriendProps> = ({ onSuccess }) => {
                 variant="outline"
                 onClick={() => handleAddFriend(user.id)}
                 disabled={isSubmitting && selectedUserId === user.id}
+                className="px-4 hover:bg-blue-50 hover:border-blue-300 transition-colors"
               >
                 {isSubmitting && selectedUserId === user.id ? (
-                  "Sending..."
+                  <>
+                    <span className="animate-spin inline-block h-3 w-3 border-2 border-current border-t-transparent rounded-full mr-2"></span>
+                    Sending...
+                  </>
                 ) : (
                   <>
-                    <UserPlus size={16} className="mr-1" />
-                    Add
+                    <UserPlus size={16} className="mr-2 text-blue-500" />
+                    Add Friend
                   </>
                 )}
               </Button>
             </div>
           ))}
         </div>
-      )}{" "}
+      )}
       {searchQuery && !isSearching && searchResults.length === 0 && (
-        <div className="text-center p-4 text-gray-500">
-          No users found matching &quot;{searchQuery}&quot;
+        <div className="text-center p-6 text-gray-500 bg-gray-50 rounded-lg border border-gray-200 mt-4">
+          <Search size={24} className="mx-auto mb-2 text-gray-400" />
+          <p>
+            No users found matching &quot;
+            <span className="font-medium">{searchQuery}</span>
+            &quot;
+          </p>
         </div>
       )}
     </div>
