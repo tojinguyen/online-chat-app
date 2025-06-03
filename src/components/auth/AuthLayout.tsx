@@ -29,7 +29,7 @@ export const AuthLayout = ({
         </div>
         <div className="relative h-96">
           <Image
-            src="/chat-illustration.svg"
+            src="/chat-illustration.png"
             alt="Chat Illustration"
             fill
             className="object-contain"
