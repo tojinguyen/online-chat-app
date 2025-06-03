@@ -2,6 +2,7 @@
 
 // filepath: d:\WEB\PROJECTS\online-chat-app\src\components\auth\ResetPasswordForm.tsx
 import { AUTH_CONSTANTS } from "@/constants";
+import { authService } from "@/services/auth-service";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Alert, Button, PasswordInput } from "../ui";
@@ -12,8 +13,8 @@ export const ResetPasswordForm = () => {
   // Use token in the resetPassword function
   const resetToken = searchParams.get("token") || "";
 
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [password, setPassword] = useState("toai20102002"); // Default password
+  const [confirmPassword, setConfirmPassword] = useState("toai20102002"); // Default confirm password
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
     useState(false);
@@ -50,14 +51,20 @@ export const ResetPasswordForm = () => {
     try {
       setIsLoading(true);
 
-      // Use the resetToken to reset the password
-      // In a real implementation, you would call your auth service
-      console.log("Resetting password with token:", resetToken);
+      // Call the reset password service
+      const response = await authService.resetPassword({
+        token: resetToken,
+        password,
+        confirmPassword,
+      });
 
-      // For now, just redirect to login after a delay
-      setTimeout(() => {
+      if (response.success) {
         router.push(AUTH_CONSTANTS.ROUTES.LOGIN);
-      }, 1500);
+      } else {
+        setError(
+          response.message || "Failed to reset password. Please try again."
+        );
+      }
     } catch (error) {
       console.error("Reset password error:", error);
       setError("Failed to reset password. Please try again.");

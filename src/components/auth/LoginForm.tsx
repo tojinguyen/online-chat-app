@@ -1,16 +1,15 @@
 "use client";
 
-// filepath: d:\WEB\PROJECTS\online-chat-app\src\components\auth\LoginForm.tsx
 import { AUTH_CONSTANTS } from "@/constants";
+import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Alert, Button, Divider, Input, PasswordInput } from "../ui";
 
 export const LoginForm = () => {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { login } = useAuth();
+  const [email, setEmail] = useState("toainguyenjob@gmail.com"); // Default email
+  const [password, setPassword] = useState("toai20102002"); // Default password
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +17,6 @@ export const LoginForm = () => {
   const togglePasswordVisibility = () => {
     setIsPasswordVisible((prev) => !prev);
   };
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -36,13 +34,15 @@ export const LoginForm = () => {
     try {
       setIsLoading(true);
 
-      // Here we would normally call the login service
-      // For example: await authService.login({ email, password });
+      // Call the login function from useAuth hook
+      const result = await login(email, password);
 
-      // For now, just redirect to dashboard after a delay to simulate login
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1500);
+      if (!result.success) {
+        setError(
+          result.message || "Login failed. Please check your credentials."
+        );
+      }
+      // If successful, the useAuth hook will handle redirection
     } catch (error) {
       console.error("Login error:", error);
       setError("Invalid email or password");

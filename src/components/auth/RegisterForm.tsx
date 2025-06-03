@@ -2,18 +2,18 @@
 
 // filepath: d:\WEB\PROJECTS\online-chat-app\src\components\auth\RegisterForm.tsx
 import { AUTH_CONSTANTS } from "@/constants";
+import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { Alert, Button, Divider, Input, PasswordInput } from "../ui";
 
 export const RegisterForm = () => {
-  const router = useRouter();
+  const { register } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    email: "toainguyenjob@gmail.com", // Default email
+    password: "toai20102002", // Default password
+    confirmPassword: "toai20102002", // Default confirm password
   });
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -100,12 +100,26 @@ export const RegisterForm = () => {
       return;
     }
 
+    if (!avatar) {
+      setError("Please upload an avatar image");
+      return;
+    }
+
     try {
-      setIsLoading(true); // Here we would normally call the register service
-      // For now, just redirect to verification page after a delay to simulate registration
-      setTimeout(() => {
-        router.push("/verify-email");
-      }, 1500);
+      setIsLoading(true);
+
+      // Call the register function from useAuth hook
+      const result = await register(
+        formData.name,
+        formData.email,
+        formData.password,
+        avatar
+      );
+
+      if (!result.success) {
+        setError(result.message || "Registration failed. Please try again.");
+      }
+      // If successful, the useAuth hook will handle redirection
     } catch (error) {
       console.error("Registration error:", error);
       setError("Registration failed. Please try again.");

@@ -2,13 +2,14 @@
 
 // filepath: d:\WEB\PROJECTS\online-chat-app\src\components\auth\ForgotPasswordForm.tsx
 import { AUTH_CONSTANTS } from "@/constants";
+import { authService } from "@/services/auth-service";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Alert, Button, Input } from "../ui";
 
 export const ForgotPasswordForm = () => {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("toainguyenjob@gmail.com"); // Default email
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -33,13 +34,17 @@ export const ForgotPasswordForm = () => {
     try {
       setIsLoading(true);
 
-      // Here we would normally call the forgot password service
-      // For example: await authService.forgotPassword({ email });
+      // Call the forgot password service
+      const response = await authService.forgotPassword({ email });
 
-      // For now, just show success message after a delay
-      setTimeout(() => {
+      if (response.success) {
         setSuccess(`Password reset instructions have been sent to ${email}`);
-      }, 1500);
+      } else {
+        setError(
+          response.message ||
+            "Failed to send reset instructions. Please try again."
+        );
+      }
     } catch (error) {
       console.error("Forgot password error:", error);
       setError("Failed to send reset instructions. Please try again.");

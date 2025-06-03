@@ -2,12 +2,14 @@
 
 // filepath: d:\WEB\PROJECTS\online-chat-app\src\components\auth\VerifyEmailForm.tsx
 import { AUTH_CONSTANTS } from "@/constants";
+import { authService } from "@/services/auth-service";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Alert, Button } from "../ui";
 
 export const VerifyEmailForm = () => {
   const router = useRouter();
+  const [email] = useState("toainguyenjob@gmail.com"); // Default email
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,13 +75,17 @@ export const VerifyEmailForm = () => {
     try {
       setIsLoading(true);
 
-      // Here we would normally call the verification service
-      // For example: await authService.verifyRegistration({ code: verificationCode });
+      // Call the verification service
+      const response = await authService.verifyRegistration({
+        email: email,
+        code: verificationCode,
+      });
 
-      // For now, just redirect to login after a delay
-      setTimeout(() => {
+      if (response.success) {
         router.push(AUTH_CONSTANTS.ROUTES.LOGIN);
-      }, 1500);
+      } else {
+        setError(response.message || "Verification failed. Please try again.");
+      }
     } catch (error) {
       console.error("Verification error:", error);
       setError("Invalid verification code. Please try again.");
