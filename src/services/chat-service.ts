@@ -10,14 +10,14 @@ import {
 } from "@/types";
 
 const CHAT_API_ENDPOINTS = {
-  CHAT_ROOMS: "/chat-rooms",
-  CHAT_ROOM: (id: string) => `/chat-rooms/${id}`,
-  CHAT_ROOM_MESSAGES: (id: string) => `/chat-rooms/${id}/messages`,
-  CHAT_ROOM_MEMBERS: (id: string) => `/chat-rooms/${id}/members`,
+  CHAT_ROOMS: "/api/v1/chat-rooms",
+  CHAT_ROOM: (id: string) => `/api/v1/chat-rooms/${id}`,
+  CHAT_ROOM_MESSAGES: (id: string) => `/api/v1/chat-rooms/${id}/messages`,
+  CHAT_ROOM_MEMBERS: (id: string) => `/api/v1/chat-rooms/${id}/members`,
   CHAT_ROOM_MEMBER: (roomId: string, userId: string) =>
-    `/chat-rooms/${roomId}/members/${userId}`,
-  CHAT_ROOM_LEAVE: (id: string) => `/chat-rooms/${id}/leave`,
-  PRIVATE_CHAT_ROOM: (userId: string) => `/chat-rooms/private/${userId}`,
+    `/api/v1/chat-rooms/${roomId}/members/${userId}`,
+  CHAT_ROOM_LEAVE: (id: string) => `/api/v1/chat-rooms/${id}/leave`,
+  PRIVATE_CHAT_ROOM: (userId: string) => `/api/v1/chat-rooms/private/${userId}`,
 };
 
 export const chatService = {

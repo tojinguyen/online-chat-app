@@ -5,10 +5,10 @@ export const AUTH_CONSTANTS = {
     USER_INFO: "chat_app_user_info",
   },
   API_ENDPOINTS: {
-    LOGIN: "/auth/login",
-    REGISTER: "/auth/register",
-    VERIFY: "/auth/verify",
-    REFRESH: "/auth/refresh",
+    LOGIN: "/api/v1/auth/login",
+    REGISTER: "/api/v1/auth/register",
+    VERIFY: "/api/v1/auth/verify",
+    REFRESH: "/api/v1/auth/refresh",
   },
   ROUTES: {
     LOGIN: "/login",

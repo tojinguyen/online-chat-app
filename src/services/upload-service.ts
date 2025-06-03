@@ -11,19 +11,15 @@ interface UploadSignatureResponse {
   resource_type: string;
 }
 
-interface SignatureRequest {
-  resourceType: string;
-}
-
 export const uploadService = {
   // Get a signature for Cloudinary upload
   getUploadSignature: async (
     resourceType: string
   ): Promise<ApiResponse<UploadSignatureResponse>> => {
-    return await apiClient.post<UploadSignatureResponse>(
-      "/api/v1/uploads/file-signature",
-      { resourceType } as SignatureRequest
-    );
+    return await apiClient.post<
+      UploadSignatureResponse,
+      Record<string, unknown>
+    >("/api/v1/uploads/file-signature", { resourceType });
   },
 
   // Upload a file to Cloudinary

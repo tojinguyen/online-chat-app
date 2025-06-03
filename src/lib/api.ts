@@ -32,10 +32,9 @@ export const apiClient = {
 
     return (await response.json()) as ApiResponse<T>;
   },
-
-  post: async <T>(
+  post: async <T, U = Record<string, unknown>>(
     endpoint: string,
-    data: any,
+    data: U,
     requireAuth = true
   ): Promise<ApiResponse<T>> => {
     const headers: HeadersInit = { ...API_CONSTANTS.HEADERS };
@@ -78,10 +77,9 @@ export const apiClient = {
 
     return (await response.json()) as ApiResponse<T>;
   },
-
-  put: async <T>(
+  put: async <T, U = Record<string, unknown>>(
     endpoint: string,
-    data: any,
+    data: U,
     requireAuth = true
   ): Promise<ApiResponse<T>> => {
     const headers: HeadersInit = { ...API_CONSTANTS.HEADERS };

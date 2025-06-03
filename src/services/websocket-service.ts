@@ -35,10 +35,8 @@ class WebSocketService {
       if (!token) {
         console.error("No token found for WebSocket connection");
         return;
-      }
-
-      // Using wss protocol for secure WebSocket connection
-      const wsUrl = `wss://localhost:8080/ws?token=${token}`;
+      } // Using wss protocol for secure WebSocket connection
+      const wsUrl = `wss://localhost:8080/api/v1/ws?token=${token}`;
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = this.handleOpen.bind(this);
@@ -141,9 +139,8 @@ class WebSocketService {
       );
     };
   }
-
   // Handle WebSocket open event
-  private handleOpen(event: Event) {
+  private handleOpen() {
     console.log("WebSocket connection established");
     this.reconnectAttempts = 0;
     this.notifyConnectionStatus(true);
@@ -178,11 +175,9 @@ class WebSocketService {
     if (event.code !== 1000) {
       this.tryReconnect();
     }
-  }
-
-  // Handle WebSocket error event
-  private handleError(event: Event) {
-    console.error("WebSocket error:", event);
+  } // Handle WebSocket error event
+  private handleError() {
+    console.error("WebSocket error occurred");
     this.notifyConnectionStatus(false);
   }
 

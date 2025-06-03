@@ -13,7 +13,7 @@ import {
 
 export const authService = {
   login: async (data: LoginRequest): Promise<ApiResponse<LoginResponse>> => {
-    const response = await apiClient.post<LoginResponse>(
+    const response = await apiClient.post<LoginResponse, LoginRequest>(
       AUTH_CONSTANTS.API_ENDPOINTS.LOGIN,
       data,
       false
@@ -58,11 +58,10 @@ export const authService = {
       false
     );
   },
-
   verifyRegistration: async (
     data: VerifyRegistrationRequest
   ): Promise<ApiResponse<RegisterResponse>> => {
-    return await apiClient.post<RegisterResponse>(
+    return await apiClient.post<RegisterResponse, VerifyRegistrationRequest>(
       AUTH_CONSTANTS.API_ENDPOINTS.VERIFY,
       data,
       false
@@ -87,8 +86,7 @@ export const authService = {
         data: {} as LoginResponse,
       };
     }
-
-    const response = await apiClient.post<LoginResponse>(
+    const response = await apiClient.post<LoginResponse, Record<string, never>>(
       AUTH_CONSTANTS.API_ENDPOINTS.REFRESH,
       {},
       true
