@@ -32,6 +32,7 @@ export const AuthGuard = ({ children, requireAuth = true }: AuthGuardProps) => {
       router.push(AUTH_CONSTANTS.ROUTES.DASHBOARD);
     }
   }, [isAuthenticated, isLoading, requireAuth, router]);
+
   // Show loading state if still checking authentication
   if (isLoading) {
     return <LoadingScreen message="Checking authentication status..." />;
@@ -42,6 +43,6 @@ export const AuthGuard = ({ children, requireAuth = true }: AuthGuardProps) => {
     return <>{children}</>;
   }
 
-  // Return null while redirecting
-  return null;
+  // Continue to render loading screen during redirect to avoid flashing content
+  return <LoadingScreen message="Redirecting..." />;
 };

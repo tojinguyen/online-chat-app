@@ -180,6 +180,29 @@ export const authService = {
         true
       );
 
+      // If successful, update local storage with the latest user data if provided
+      if (response.success && response.data) {
+        // Update tokens if new ones are provided
+        if (response.data.accessToken) {
+          tokenService.setAccessToken(response.data.accessToken);
+        }
+        if (response.data.refreshToken) {
+          tokenService.setRefreshToken(response.data.refreshToken);
+        }
+
+        // Update user info if provided
+        localStorage.setItem(
+          AUTH_CONSTANTS.STORAGE_KEYS.USER_INFO,
+          JSON.stringify({
+            userId: response.data.userId,
+            fullName: response.data.fullName,
+            email: response.data.email,
+            avatarUrl: response.data.avatarUrl,
+            role: response.data.role,
+          })
+        );
+      }
+
       return response;
     } catch (error) {
       console.error("Token verification failed", error);

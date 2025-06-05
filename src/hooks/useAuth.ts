@@ -19,30 +19,37 @@ export const useAuth = () => {
         const hasToken = authService.isAuthenticated();
 
         if (hasToken) {
-          // Verify the token with the server
-          const response = await authService.verifyToken();
-
-          if (response.success) {
-            // Token is valid, update user info
-            const userInfo = authService.getUserInfo();
+          // First set authentication state based on token presence
+          const userInfo = authService.getUserInfo();
+          if (userInfo) {
             setUser(userInfo);
             setIsAuthenticated(true);
-          } else {
-            // Token verification failed, try refresh token
-            const refreshResponse = await authService.refreshToken();
-
-            if (refreshResponse.success) {
-              // Refresh successful, update user info
-              const userInfo = authService.getUserInfo();
-              setUser(userInfo);
-              setIsAuthenticated(true);
-            } else {
-              // Refresh failed, clear auth state
-              authService.logout();
-              setUser(null);
-              setIsAuthenticated(false);
-            }
           }
+
+          // Then verify the token with the server (but don't wait for the result to show UI)
+          authService
+            .verifyToken()
+            .then((response) => {
+              if (!response.success) {
+                // Only if verification explicitly fails, try refresh
+                authService
+                  .refreshToken()
+                  .then((refreshResponse) => {
+                    if (!refreshResponse.success) {
+                      // Only if refresh explicitly fails, log out
+                      authService.logout();
+                      setUser(null);
+                      setIsAuthenticated(false);
+                    }
+                  })
+                  .catch((error) => {
+                    console.error("Token refresh failed", error);
+                  });
+              }
+            })
+            .catch((error) => {
+              console.error("Token verification failed", error);
+            });
         } else {
           setIsAuthenticated(false);
           setUser(null);
