@@ -166,6 +166,7 @@ export const authService = {
     const token = tokenService.getAccessToken();
 
     if (!token) {
+      console.log("verifyToken: No access token available");
       return {
         success: false,
         message: "No access token available",
@@ -174,14 +175,20 @@ export const authService = {
     }
 
     try {
+      console.log("verifyToken: Calling verify endpoint");
       // Call the verify endpoint with the access token
       const response = await apiClient.get<LoginResponse>(
         AUTH_CONSTANTS.API_ENDPOINTS.VERIFY,
         true
       );
 
+      console.log("verifyToken: Response received", {
+        success: response.success,
+      });
+
       // If successful, update local storage with the latest user data if provided
       if (response.success && response.data) {
+        console.log("verifyToken: Updating local storage with response data");
         // Update tokens if new ones are provided
         if (response.data.accessToken) {
           tokenService.setAccessToken(response.data.accessToken);

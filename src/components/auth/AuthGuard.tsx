@@ -24,13 +24,22 @@ export const AuthGuard = ({ children, requireAuth = true }: AuthGuardProps) => {
     // Skip the check if still loading
     if (isLoading) return;
 
-    if (requireAuth && !isAuthenticated) {
-      // User not authenticated but route requires auth
-      router.push(AUTH_CONSTANTS.ROUTES.LOGIN);
-    } else if (!requireAuth && isAuthenticated) {
-      // User is authenticated but route is for non-authenticated users (like login page)
-      router.push(AUTH_CONSTANTS.ROUTES.DASHBOARD);
-    }
+    // Add a small delay to ensure state is fully updated before redirecting
+    const timeoutId = setTimeout(() => {
+      if (requireAuth && !isAuthenticated) {
+        // User not authenticated but route requires auth
+        console.log("AuthGuard: Redirecting to login - not authenticated");
+        router.replace(AUTH_CONSTANTS.ROUTES.LOGIN);
+      } else if (!requireAuth && isAuthenticated) {
+        // User is authenticated but route is for non-authenticated users (like login page)
+        console.log(
+          "AuthGuard: Redirecting to dashboard - already authenticated"
+        );
+        router.replace(AUTH_CONSTANTS.ROUTES.DASHBOARD);
+      }
+    }, 50); // Small delay
+
+    return () => clearTimeout(timeoutId);
   }, [isAuthenticated, isLoading, requireAuth, router]);
 
   // Show loading state if still checking authentication
@@ -44,5 +53,6 @@ export const AuthGuard = ({ children, requireAuth = true }: AuthGuardProps) => {
   }
 
   // Continue to render loading screen during redirect to avoid flashing content
+  return <LoadingScreen message="Redirecting..." />;
   return <LoadingScreen message="Redirecting..." />;
 };

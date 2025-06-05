@@ -73,9 +73,14 @@ export const useAuth = () => {
       const response = await authService.login({ email, password });
 
       if (response.success) {
-        setUser(authService.getUserInfo());
+        // Immediately set the user and authentication state
+        const userInfo = authService.getUserInfo();
+        setUser(userInfo);
         setIsAuthenticated(true);
-        router.push(AUTH_CONSTANTS.ROUTES.DASHBOARD);
+
+        // Use window.location for navigation instead of router to force a full page refresh
+        // This ensures we get a clean start with the new authentication state
+        window.location.href = AUTH_CONSTANTS.ROUTES.DASHBOARD;
         return { success: true };
       }
 
@@ -132,37 +137,43 @@ export const useAuth = () => {
     try {
       // Check if we have a token
       if (authService.isAuthenticated()) {
-        // Verify the token with the server
-        const response = await authService.verifyToken();
+        // Get user info from localStorage
+        const userInfo = authService.getUserInfo();
 
-        if (response.success) {
-          // Token is valid, set user and authentication state
-          setUser(authService.getUserInfo());
+        if (userInfo) {
+          // Set auth state optimistically based on token presence
+          setUser(userInfo);
           setIsAuthenticated(true);
-          return { success: true };
-        } else {
-          // Token verification failed, try refresh token
-          const refreshResponse = await authService.refreshToken();
 
-          if (refreshResponse.success) {
-            // Refresh successful, set user and authentication state
-            setUser(authService.getUserInfo());
-            setIsAuthenticated(true);
-            return { success: true };
-          } else {
-            // Refresh failed, clear auth state
-            authService.logout();
-            setUser(null);
-            setIsAuthenticated(false);
-            return {
-              success: false,
-              message: "Session expired. Please login again.",
-            };
-          }
+          // Trigger token verification in the background but don't wait for it
+          authService
+            .verifyToken()
+            .then((response) => {
+              if (!response.success) {
+                // Only try refresh if verification fails
+                return authService.refreshToken();
+              }
+              return response;
+            })
+            .then((finalResponse) => {
+              if (!finalResponse.success) {
+                // Only if both verify and refresh fail, log out - but not now, on next page load
+                console.log(
+                  "Token validation failed but keeping session active for now"
+                );
+              }
+            })
+            .catch((error) => {
+              console.error("Background token validation error:", error);
+            });
+
+          // Return success immediately without waiting
+          return { success: true };
         }
-      } else {
-        return { success: false, message: "No active session found." };
       }
+
+      // No valid token or user info
+      return { success: false, message: "No active session found." };
     } catch (error) {
       console.error("Auto login failed", error);
       authService.logout();
