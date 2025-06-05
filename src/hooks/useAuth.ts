@@ -15,17 +15,43 @@ export const useAuth = () => {
       try {
         setIsLoading(true);
 
-        // Check if user is authenticated
-        const isAuth = authService.isAuthenticated();
-        setIsAuthenticated(isAuth);
+        // Check if user is authenticated based on token presence
+        const hasToken = authService.isAuthenticated();
 
-        if (isAuth) {
-          // Get user info from local storage
-          const userInfo = authService.getUserInfo();
-          setUser(userInfo);
+        if (hasToken) {
+          // Verify the token with the server
+          const response = await authService.verifyToken();
+
+          if (response.success) {
+            // Token is valid, update user info
+            const userInfo = authService.getUserInfo();
+            setUser(userInfo);
+            setIsAuthenticated(true);
+          } else {
+            // Token verification failed, try refresh token
+            const refreshResponse = await authService.refreshToken();
+
+            if (refreshResponse.success) {
+              // Refresh successful, update user info
+              const userInfo = authService.getUserInfo();
+              setUser(userInfo);
+              setIsAuthenticated(true);
+            } else {
+              // Refresh failed, clear auth state
+              authService.logout();
+              setUser(null);
+              setIsAuthenticated(false);
+            }
+          }
+        } else {
+          setIsAuthenticated(false);
+          setUser(null);
         }
       } catch (error) {
         console.error("Authentication check failed", error);
+        authService.logout();
+        setUser(null);
+        setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
       }
@@ -94,6 +120,53 @@ export const useAuth = () => {
     }
   };
 
+  const autoLogin = async () => {
+    setIsLoading(true);
+    try {
+      // Check if we have a token
+      if (authService.isAuthenticated()) {
+        // Verify the token with the server
+        const response = await authService.verifyToken();
+
+        if (response.success) {
+          // Token is valid, set user and authentication state
+          setUser(authService.getUserInfo());
+          setIsAuthenticated(true);
+          return { success: true };
+        } else {
+          // Token verification failed, try refresh token
+          const refreshResponse = await authService.refreshToken();
+
+          if (refreshResponse.success) {
+            // Refresh successful, set user and authentication state
+            setUser(authService.getUserInfo());
+            setIsAuthenticated(true);
+            return { success: true };
+          } else {
+            // Refresh failed, clear auth state
+            authService.logout();
+            setUser(null);
+            setIsAuthenticated(false);
+            return {
+              success: false,
+              message: "Session expired. Please login again.",
+            };
+          }
+        }
+      } else {
+        return { success: false, message: "No active session found." };
+      }
+    } catch (error) {
+      console.error("Auto login failed", error);
+      authService.logout();
+      setUser(null);
+      setIsAuthenticated(false);
+      return { success: false, message: "Login failed. Please try again." };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     user,
     isLoading,
@@ -101,5 +174,6 @@ export const useAuth = () => {
     login,
     logout,
     register,
+    autoLogin,
   };
 };

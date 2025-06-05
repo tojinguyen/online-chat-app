@@ -1,11 +1,15 @@
-import { API_CONSTANTS, AUTH_CONSTANTS } from "@/constants";
+import { API_CONSTANTS } from "@/constants";
+import { tokenService } from "@/services/token-service";
 import { ApiResponse } from "@/types";
 
-const getAuthorizationHeader = (): string => {
+const getAuthorizationHeader = (
+  tokenType: "access" | "refresh" = "access"
+): string => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem(
-      AUTH_CONSTANTS.STORAGE_KEYS.ACCESS_TOKEN
-    );
+    const token =
+      tokenType === "access"
+        ? tokenService.getAccessToken()
+        : tokenService.getRefreshToken();
     return token ? `Bearer ${token}` : "";
   }
   return "";
@@ -35,12 +39,13 @@ export const apiClient = {
   post: async <T, U = Record<string, unknown>>(
     endpoint: string,
     data: U,
-    requireAuth = true
+    requireAuth = true,
+    tokenType: "access" | "refresh" = "access"
   ): Promise<ApiResponse<T>> => {
     const headers: HeadersInit = { ...API_CONSTANTS.HEADERS };
 
     if (requireAuth) {
-      const authHeader = getAuthorizationHeader();
+      const authHeader = getAuthorizationHeader(tokenType);
       if (authHeader) {
         headers["Authorization"] = authHeader;
       }
@@ -58,12 +63,13 @@ export const apiClient = {
   postFormData: async <T>(
     endpoint: string,
     formData: FormData,
-    requireAuth = true
+    requireAuth = true,
+    tokenType: "access" | "refresh" = "access"
   ): Promise<ApiResponse<T>> => {
     const headers: HeadersInit = {};
 
     if (requireAuth) {
-      const authHeader = getAuthorizationHeader();
+      const authHeader = getAuthorizationHeader(tokenType);
       if (authHeader) {
         headers["Authorization"] = authHeader;
       }
@@ -80,12 +86,13 @@ export const apiClient = {
   put: async <T, U = Record<string, unknown>>(
     endpoint: string,
     data: U,
-    requireAuth = true
+    requireAuth = true,
+    tokenType: "access" | "refresh" = "access"
   ): Promise<ApiResponse<T>> => {
     const headers: HeadersInit = { ...API_CONSTANTS.HEADERS };
 
     if (requireAuth) {
-      const authHeader = getAuthorizationHeader();
+      const authHeader = getAuthorizationHeader(tokenType);
       if (authHeader) {
         headers["Authorization"] = authHeader;
       }
@@ -102,12 +109,13 @@ export const apiClient = {
 
   delete: async <T>(
     endpoint: string,
-    requireAuth = true
+    requireAuth = true,
+    tokenType: "access" | "refresh" = "access"
   ): Promise<ApiResponse<T>> => {
     const headers: HeadersInit = { ...API_CONSTANTS.HEADERS };
 
     if (requireAuth) {
-      const authHeader = getAuthorizationHeader();
+      const authHeader = getAuthorizationHeader(tokenType);
       if (authHeader) {
         headers["Authorization"] = authHeader;
       }

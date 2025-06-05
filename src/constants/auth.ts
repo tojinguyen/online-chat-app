@@ -7,8 +7,8 @@ export const AUTH_CONSTANTS = {
   API_ENDPOINTS: {
     LOGIN: "/api/v1/auth/login",
     REGISTER: "/api/v1/auth/register",
-    VERIFY: "/api/v1/auth/verify",
-    REFRESH: "/api/v1/auth/refresh",
+    VERIFY: "/api/v1/auth/verify-token",
+    REFRESH: "/api/v1/auth/refresh-token",
   },
   ROUTES: {
     LOGIN: "/login",

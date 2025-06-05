@@ -1,3 +1,4 @@
+export * from "./AuthGuard";
 export * from "./AuthLayout";
 export * from "./ForgotPasswordForm";
 export * from "./LoginForm";
