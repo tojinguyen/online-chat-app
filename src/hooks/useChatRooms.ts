@@ -23,8 +23,23 @@ export const useChatRooms = (initialParams?: ChatPaginationParams) => {
 
         if (response.success) {
           console.log("API Response:", response.data);
-          setChatRooms(response.data.data);
-          setTotalCount(response.data.total_count);
+
+          // Handle the response structure from the API
+          if (Array.isArray(response.data)) {
+            // Direct array response
+            setChatRooms(response.data);
+            setTotalCount(response.data.length);
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            // Paginated response with data property
+            setChatRooms(response.data.data);
+            setTotalCount(
+              response.data.total_count || response.data.data.length
+            );
+          } else {
+            console.warn("Unexpected API response format:", response.data);
+            setChatRooms([]);
+            setTotalCount(0);
+          }
         } else {
           console.warn("API Error, using mock data:", response.message);
           setChatRooms(mockChatRooms);

@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuthContext } from "@/context/AuthContext";
 import { ChatRoom } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
@@ -18,18 +19,12 @@ export const ChatRoomsList = ({
   isLoading,
 }: ChatRoomsListProps) => {
   const router = useRouter();
-
-  console.log("ChatRoomsList received:", {
-    chatRooms,
-    isLoading,
-    activeChatRoomId,
-  });
+  const { user } = useAuthContext();
+  const currentUserId = user?.userId || "";
 
   const handleSelectChatRoom = (roomId: string) => {
     router.push(`/chat/${roomId}`);
-  };
-
-  // Helper to get display info for a chat room
+  }; // Helper to get display info for a chat room
   const getChatRoomDisplayInfo = (chatRoom: ChatRoom) => {
     // For private chats, get the other user's info
     if (
@@ -37,8 +32,6 @@ export const ChatRoomsList = ({
       chatRoom.members &&
       chatRoom.members.length > 1
     ) {
-      // In a real app, you would get the current user ID from authentication context
-      const currentUserId = "current-user-id"; // Replace with actual implementation
       const otherMember = chatRoom.members.find(
         (member) => member.user_id !== currentUserId
       );
@@ -58,7 +51,6 @@ export const ChatRoomsList = ({
     };
   };
   if (isLoading) {
-    console.log("ChatRoomsList: Loading state");
     return (
       <div className="flex justify-center p-4">
         <div className="animate-spin h-5 w-5 border-2 border-primary-500 rounded-full border-t-transparent"></div>
@@ -67,17 +59,12 @@ export const ChatRoomsList = ({
   }
 
   if (!chatRooms || chatRooms.length === 0) {
-    console.log("ChatRoomsList: Empty state");
     return (
       <div className="p-4 text-center text-slate-500">No conversations yet</div>
     );
   }
-
-  console.log("ChatRoomsList: Rendering", chatRooms.length, "rooms");
-
   return (
     <ul className="divide-y divide-slate-100">
-      {" "}
       {chatRooms.map((chatRoom) => {
         const { name, avatar } = getChatRoomDisplayInfo(chatRoom);
         const isActive = chatRoom.id === activeChatRoomId;
