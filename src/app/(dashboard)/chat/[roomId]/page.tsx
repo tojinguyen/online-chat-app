@@ -7,6 +7,7 @@ import {
   ChatRoomsList,
 } from "@/components/chat";
 import { Button } from "@/components/ui";
+import { useAuthContext } from "@/context/AuthContext";
 import { useChatMessages, useChatRooms, useWebSocket } from "@/hooks";
 import { chatService } from "@/services";
 import { ChatRoom, Message, MessageType } from "@/types";
@@ -17,6 +18,7 @@ export default function ChatRoomPage() {
   const params = useParams();
   const router = useRouter();
   const roomId = params.roomId as string;
+  const { user } = useAuthContext();
 
   const { chatRooms, isLoading: isLoadingRooms } = useChatRooms();
   const {
@@ -36,8 +38,8 @@ export default function ChatRoomPage() {
   const [onlineMembers, setOnlineMembers] = useState<string[]>([]);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
-  // In a real app, this would come from an authentication context
-  const currentUserId = "current-user-id"; // Replace with actual implementation
+  // Get current user ID from authentication context
+  const currentUserId = user?.userId || "current-user-id"; // Fallback for development
 
   // Add WebSocket messages to the chat
   useEffect(() => {
