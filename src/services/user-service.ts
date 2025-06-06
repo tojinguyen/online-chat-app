@@ -5,8 +5,6 @@ import {
   Friend,
   FriendRequest,
   UserProfile,
-  UserSearchParams,
-  UserSearchResult,
 } from "@/types";
 
 const USER_API_ENDPOINTS = {
@@ -24,12 +22,14 @@ const USER_API_ENDPOINTS = {
 export const userService = {
   // Search for users by name
   searchUsers: async (
-    params: UserSearchParams
-  ): Promise<ApiResponse<UserSearchResult>> => {
-    const queryParams = `?name=${encodeURIComponent(params.query)}&page=${
-      params.page
-    }&limit=${params.limit}`;
-    return await apiClient.get<UserSearchResult>(
+    query: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<ApiResponse<UserProfile[]>> => {
+    const queryParams = `?query=${encodeURIComponent(
+      query
+    )}&page=${page}&limit=${limit}`;
+    return await apiClient.get<UserProfile[]>(
       `${USER_API_ENDPOINTS.USERS}${queryParams}`
     );
   },

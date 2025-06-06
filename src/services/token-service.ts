@@ -7,11 +7,18 @@ export const tokenService = {
   /**
    * Get the access token from localStorage
    * @returns The access token or null if not found
-   */
-  getAccessToken: (): string | null => {
+   */ getAccessToken: (): string | null => {
     if (typeof window === "undefined") return null;
 
-    return localStorage.getItem(AUTH_CONSTANTS.STORAGE_KEYS.ACCESS_TOKEN);
+    // For development testing - use a mock token if no token exists
+    const token = localStorage.getItem(
+      AUTH_CONSTANTS.STORAGE_KEYS.ACCESS_TOKEN
+    );
+    if (!token) {
+      console.warn("No access token found, using mock token for development");
+      return "mock-token-for-development";
+    }
+    return token;
   },
 
   /**

@@ -1,17 +1,23 @@
 "use client";
 
 import { ChatRoom } from "@/types";
+import { useState } from "react";
 import { Avatar } from "../ui";
+import { ChatMembersManagement } from "./ChatMembersManagement";
 
 interface ChatHeaderProps {
   chatRoom: ChatRoom;
   onlineMembers?: string[];
+  onMembersUpdated?: () => void;
 }
 
 export const ChatHeader = ({
   chatRoom,
   onlineMembers = [],
+  onMembersUpdated,
 }: ChatHeaderProps) => {
+  const [showMembersManagement, setShowMembersManagement] = useState(false);
+
   // In a real app, you would get the current user ID from authentication context
   const currentUserId = "current-user-id"; // Replace with actual implementation
 
@@ -48,11 +54,14 @@ export const ChatHeader = ({
               : "Offline"}
           </div>
         </div>
-      </div>
-
+      </div>{" "}
       <div className="flex items-center space-x-2">
         {chatRoom.type === "GROUP" && (
-          <button className="text-slate-500 hover:text-primary-500 p-2 rounded-full hover:bg-slate-100">
+          <button
+            className="text-slate-500 hover:text-primary-500 p-2 rounded-full hover:bg-slate-100"
+            onClick={() => setShowMembersManagement(true)}
+            title="Manage members"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
@@ -78,6 +87,20 @@ export const ChatHeader = ({
           </svg>
         </button>
       </div>
+      {showMembersManagement && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="w-full max-w-md mx-4">
+            <ChatMembersManagement
+              chatRoom={chatRoom}
+              onClose={() => setShowMembersManagement(false)}
+              onSuccess={() => {
+                setShowMembersManagement(false);
+                if (onMembersUpdated) onMembersUpdated();
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

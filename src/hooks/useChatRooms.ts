@@ -1,5 +1,6 @@
 import { chatService } from "@/services";
 import { ChatPaginationParams, ChatRoom } from "@/types";
+import { mockChatRooms } from "@/utils/mockData";
 import { useCallback, useEffect, useState } from "react";
 
 export const useChatRooms = (initialParams?: ChatPaginationParams) => {
@@ -21,14 +22,20 @@ export const useChatRooms = (initialParams?: ChatPaginationParams) => {
         const response = await chatService.getChatRooms(currentParams);
 
         if (response.success) {
+          console.log("API Response:", response.data);
           setChatRooms(response.data.data);
           setTotalCount(response.data.total_count);
         } else {
+          console.warn("API Error, using mock data:", response.message);
+          setChatRooms(mockChatRooms);
+          setTotalCount(mockChatRooms.length);
           setError(response.message);
         }
       } catch (err) {
+        console.error("Error fetching chat rooms, using mock data:", err);
+        setChatRooms(mockChatRooms);
+        setTotalCount(mockChatRooms.length);
         setError("Failed to fetch chat rooms");
-        console.error("Error fetching chat rooms:", err);
       } finally {
         setIsLoading(false);
       }

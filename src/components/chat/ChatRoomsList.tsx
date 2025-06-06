@@ -4,6 +4,7 @@ import { ChatRoom } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
 import { Avatar } from "../ui";
+import { UnreadBadge } from "./UnreadBadge";
 
 interface ChatRoomsListProps {
   chatRooms: ChatRoom[];
@@ -17,6 +18,12 @@ export const ChatRoomsList = ({
   isLoading,
 }: ChatRoomsListProps) => {
   const router = useRouter();
+
+  console.log("ChatRoomsList received:", {
+    chatRooms,
+    isLoading,
+    activeChatRoomId,
+  });
 
   const handleSelectChatRoom = (roomId: string) => {
     router.push(`/chat/${roomId}`);
@@ -50,8 +57,8 @@ export const ChatRoomsList = ({
       avatar: "", // Could use a default group avatar
     };
   };
-
   if (isLoading) {
+    console.log("ChatRoomsList: Loading state");
     return (
       <div className="flex justify-center p-4">
         <div className="animate-spin h-5 w-5 border-2 border-primary-500 rounded-full border-t-transparent"></div>
@@ -60,10 +67,13 @@ export const ChatRoomsList = ({
   }
 
   if (!chatRooms || chatRooms.length === 0) {
+    console.log("ChatRoomsList: Empty state");
     return (
       <div className="p-4 text-center text-slate-500">No conversations yet</div>
     );
   }
+
+  console.log("ChatRoomsList: Rendering", chatRooms.length, "rooms");
 
   return (
     <ul className="divide-y divide-slate-100">
@@ -99,6 +109,13 @@ export const ChatRoomsList = ({
                   </>
                 )}
               </div>
+
+              {/* Unread message count - this would come from an actual unread count in a real app */}
+              {!isActive && chatRoom.unread_count && (
+                <div className="ml-2">
+                  <UnreadBadge count={chatRoom.unread_count} />
+                </div>
+              )}
             </button>
           </li>
         );

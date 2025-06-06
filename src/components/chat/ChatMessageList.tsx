@@ -3,12 +3,14 @@
 import { Message } from "@/types";
 import { useEffect, useRef } from "react";
 import { ChatMessage } from "./ChatMessage";
+import { TypingIndicator } from "./TypingIndicator";
 
 interface ChatMessageListProps {
   messages: Message[];
   currentUserId: string;
   isLoading: boolean;
   loadMoreMessages: () => void;
+  typingUsers?: string[]; // New prop for users who are typing
 }
 
 export const ChatMessageList = ({
@@ -16,6 +18,7 @@ export const ChatMessageList = ({
   currentUserId,
   isLoading,
   loadMoreMessages,
+  typingUsers = [],
 }: ChatMessageListProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageContainerRef = useRef<HTMLDivElement>(null);
@@ -68,6 +71,8 @@ export const ChatMessageList = ({
           isCurrentUser={message.sender_id === currentUserId}
         />
       ))}
+
+      {typingUsers.length > 0 && <TypingIndicator userName={typingUsers[0]} />}
 
       <div ref={messagesEndRef} />
     </div>

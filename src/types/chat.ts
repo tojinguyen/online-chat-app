@@ -16,6 +16,7 @@ export interface ChatMember {
   name: string;
   avatar_url: string;
   joined_at: string;
+  role?: string; // "OWNER", "MEMBER", etc.
 }
 
 export interface Message {
@@ -38,6 +39,7 @@ export interface ChatRoom {
   member_count: number;
   members: ChatMember[];
   last_message?: Message;
+  unread_count?: number;
 }
 
 export interface ChatRoomCreateRequest {

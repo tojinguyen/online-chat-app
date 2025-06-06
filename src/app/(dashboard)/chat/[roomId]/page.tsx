@@ -29,10 +29,10 @@ export default function ChatRoomPage() {
     sendMessage,
     messages: wsMessages,
   } = useWebSocket(roomId);
-
   const [currentChatRoom, setCurrentChatRoom] = useState<ChatRoom | null>(null);
   const [isLoadingRoom, setIsLoadingRoom] = useState(true);
   const [onlineMembers, setOnlineMembers] = useState<string[]>([]);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   // In a real app, this would come from an authentication context
   const currentUserId = "current-user-id"; // Replace with actual implementation
@@ -77,6 +77,36 @@ export default function ChatRoomPage() {
     fetchChatRoom();
   }, [roomId]);
 
+  // Simulate typing indicators (in a real app, this would come from WebSocket)
+  useEffect(() => {
+    if (!currentChatRoom) return;
+
+    // Randomly show typing indicators for demonstration purposes
+    const typingInterval = setInterval(() => {
+      const shouldShowTyping = Math.random() > 0.7; // 30% chance
+
+      if (shouldShowTyping && currentChatRoom.members.length > 1) {
+        // Get a random member that isn't the current user
+        const otherMembers = currentChatRoom.members.filter(
+          (member) => member.user_id !== currentUserId
+        );
+
+        if (otherMembers.length > 0) {
+          const randomMember =
+            otherMembers[Math.floor(Math.random() * otherMembers.length)];
+          setTypingUsers([randomMember.name]);
+
+          // Clear typing indicator after a few seconds
+          setTimeout(() => {
+            setTypingUsers([]);
+          }, 3000);
+        }
+      }
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(typingInterval);
+  }, [currentChatRoom, currentUserId]);
+
   // Handle sending a new message
   const handleSendMessage = (content: string) => {
     if (content.trim() && isConnected) {
@@ -118,18 +148,32 @@ export default function ChatRoomPage() {
           </div>
         ) : currentChatRoom ? (
           <>
+            {" "}
             <ChatHeader
               chatRoom={currentChatRoom}
               onlineMembers={onlineMembers}
-            />
-
+              onMembersUpdated={() => {
+                // Refetch the current chat room to get updated members list
+                const fetchChatRoom = async () => {
+                  try {
+                    const response = await chatService.getChatRoomById(roomId);
+                    if (response.success) {
+                      setCurrentChatRoom(response.data);
+                    }
+                  } catch (error) {
+                    console.error("Error fetching updated chat room:", error);
+                  }
+                };
+                fetchChatRoom();
+              }}
+            />{" "}
             <ChatMessageList
               messages={messages}
               currentUserId={currentUserId}
               isLoading={isLoadingMessages}
               loadMoreMessages={loadMoreMessages}
+              typingUsers={typingUsers}
             />
-
             <ChatInput
               onSendMessage={handleSendMessage}
               isConnected={isConnected}

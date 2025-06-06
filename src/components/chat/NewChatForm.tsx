@@ -4,6 +4,7 @@ import { chatService } from "@/services";
 import { ChatRoomType } from "@/types";
 import { useState } from "react";
 import { Button, Input } from "../ui";
+import { UserSelection } from "./UserSelection";
 
 interface NewChatFormProps {
   onCancel: () => void;
@@ -104,31 +105,11 @@ export const NewChatForm = ({ onCancel, onSuccess }: NewChatFormProps) => {
             </label>
             <div className="text-sm text-slate-500 italic mb-2">
               In a real app, this would be a user selection component
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {["user1", "user2", "user3"].map((userId) => (
-                <label
-                  key={userId}
-                  className="flex items-center p-2 border rounded-md"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedMemberIds.includes(userId)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedMemberIds([...selectedMemberIds, userId]);
-                      } else {
-                        setSelectedMemberIds(
-                          selectedMemberIds.filter((id) => id !== userId)
-                        );
-                      }
-                    }}
-                    className="mr-2"
-                  />
-                  User {userId}
-                </label>
-              ))}
-            </div>
+            </div>{" "}
+            <UserSelection
+              selectedUserIds={selectedMemberIds}
+              onChange={setSelectedMemberIds}
+            />
           </div>
         </div>
 
