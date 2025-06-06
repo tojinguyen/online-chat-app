@@ -5,6 +5,7 @@ export * from "./ChatMessage";
 export * from "./ChatMessageList";
 export * from "./ChatRoomsList";
 export * from "./EmptyChatState";
+export * from "./MessageMedia";
 export * from "./NewChatForm";
 export * from "./TypingIndicator";
 export * from "./UnreadBadge";

@@ -1,8 +1,10 @@
 "use client";
 
 import { Message } from "@/types";
+import { parseMessageContent } from "@/utils/message-parser";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar } from "../ui";
+import { MessageMedia } from "./MessageMedia";
 
 interface ChatMessageProps {
   message: Message;
@@ -14,6 +16,8 @@ export const ChatMessage = ({ message, isCurrentUser }: ChatMessageProps) => {
     addSuffix: true,
     includeSeconds: true,
   });
+
+  const parsedContent = parseMessageContent(message.content);
 
   return (
     <div
@@ -40,7 +44,15 @@ export const ChatMessage = ({ message, isCurrentUser }: ChatMessageProps) => {
             {message.sender_name}
           </div>
         )}
-        <div className="break-words">{message.content}</div>
+        <div className="space-y-1">
+          {parsedContent.map((content, index) => (
+            <MessageMedia
+              key={index}
+              content={content}
+              isCurrentUser={isCurrentUser}
+            />
+          ))}
+        </div>
         <div
           className={`text-xs mt-1 ${
             isCurrentUser ? "text-primary-100" : "text-slate-500"

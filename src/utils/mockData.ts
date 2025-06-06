@@ -125,7 +125,8 @@ export const mockChatRooms: ChatRoom[] = [
       sender_name: "Bob Johnson",
       avatar_url:
         "https://ui-avatars.com/api/?name=Bob+Johnson&background=673AB7&color=fff",
-      content: "I've shared the campaign materials in the group",
+      content:
+        "[IMG:https://res.cloudinary.com/durc9hj8m/image/upload/v1748444457/chat_files/197aaf8d-920c-4db4-a79a-e4419433e88e.jpg]\n[VIDEO:https://res.cloudinary.com/durc9hj8m/video/upload/v1748444471/chat_files/6a1962d1-a891-4aa8-8011-42fe38012084.mp4]\n[FILE:https://res.cloudinary.com/durc9hj8m/image/upload/v1748444643/chat_files/8e391be4-9d3b-42bc-8795-386b0a31aa48.pdf]UNITY_DEV_NGUYEN_VAN_TOAI.pdf",
       type: MessageType.TEXT,
       created_at: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
     },
