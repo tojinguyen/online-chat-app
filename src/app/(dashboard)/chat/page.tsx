@@ -58,7 +58,7 @@ export default function ChatPage() {
             />
           </div>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 overflow-hidden">
           {showNewChatForm ? (
             <div className="p-6">
               <NewChatForm

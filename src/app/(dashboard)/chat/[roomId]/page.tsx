@@ -6,14 +6,16 @@ import {
   ChatMessageList,
   ChatRoomsList,
 } from "@/components/chat";
+import { Button } from "@/components/ui";
 import { useChatMessages, useChatRooms, useWebSocket } from "@/hooks";
 import { chatService } from "@/services";
 import { ChatRoom, Message, MessageType } from "@/types";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function ChatRoomPage() {
   const params = useParams();
+  const router = useRouter();
   const roomId = params.roomId as string;
 
   const { chatRooms, isLoading: isLoadingRooms } = useChatRooms();
@@ -127,12 +129,33 @@ export default function ChatRoomPage() {
       addMessage(tempMessage);
     }
   };
-
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen overflow-hidden">
       {/* Chat rooms sidebar */}
-      <div className="w-80 h-full">
-        <div className="h-full overflow-y-auto">
+      <div className="w-80 h-full flex flex-col">
+        <div className="p-4 border-b flex items-center justify-between">
+          <h2 className="font-semibold text-slate-800">Conversations</h2>
+          <Button
+            size="sm"
+            onClick={() => router.push("/chat")}
+            aria-label="New chat"
+            title="New chat"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </Button>
+        </div>
+        <div className="flex-1 overflow-y-auto">
           <ChatRoomsList
             chatRooms={chatRooms}
             activeChatRoomId={roomId}
@@ -140,15 +163,14 @@ export default function ChatRoomPage() {
           />
         </div>
       </div>
-      {/* Chat area */}
-      <div className="flex-1 flex flex-col">
+      {/* Chat area - fixed height, no scroll on container */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {isLoadingRoom ? (
           <div className="flex items-center justify-center h-full">
             <div className="animate-spin h-8 w-8 border-4 border-primary-500 rounded-full border-t-transparent"></div>
           </div>
         ) : currentChatRoom ? (
           <>
-            {" "}
             <ChatHeader
               chatRoom={currentChatRoom}
               onlineMembers={onlineMembers}
@@ -166,14 +188,17 @@ export default function ChatRoomPage() {
                 };
                 fetchChatRoom();
               }}
-            />{" "}
-            <ChatMessageList
-              messages={messages}
-              currentUserId={currentUserId}
-              isLoading={isLoadingMessages}
-              loadMoreMessages={loadMoreMessages}
-              typingUsers={typingUsers}
             />
+            {/* Only the message list should scroll */}
+            <div className="flex-1 overflow-hidden">
+              <ChatMessageList
+                messages={messages}
+                currentUserId={currentUserId}
+                isLoading={isLoadingMessages}
+                loadMoreMessages={loadMoreMessages}
+                typingUsers={typingUsers}
+              />
+            </div>
             <ChatInput
               onSendMessage={handleSendMessage}
               isConnected={isConnected}
@@ -184,7 +209,7 @@ export default function ChatRoomPage() {
             Chat room not found
           </div>
         )}
-      </div>{" "}
+      </div>
     </div>
   );
 }
