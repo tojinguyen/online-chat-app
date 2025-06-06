@@ -10,6 +10,7 @@ export const useChatMessages = (
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [params, setParams] = useState<ChatPaginationParams>(
     initialParams || { page: 1, limit: 20 }
   );
@@ -43,7 +44,10 @@ export const useChatMessages = (
             setMessages((prev) => [...sortedMessages, ...prev]);
           }
 
+          // Update pagination state
           setTotalCount(response.data.length);
+          // If we got fewer messages than requested, there are no more messages
+          setHasMoreMessages(response.data.length === currentParams.limit);
         } else {
           setError(response.message);
         }
@@ -62,6 +66,7 @@ export const useChatMessages = (
       // Reset state when chat room changes
       setMessages([]);
       setTotalCount(0);
+      setHasMoreMessages(true);
       setParams({ page: 1, limit: 20 });
 
       // Use inline function to avoid dependency on fetchMessages
@@ -86,6 +91,8 @@ export const useChatMessages = (
 
             setMessages(sortedMessages);
             setTotalCount(response.data.length);
+            // If we got fewer messages than requested, there are no more messages
+            setHasMoreMessages(response.data.length === initialParams.limit);
           } else {
             setError(response.message);
           }
@@ -102,7 +109,7 @@ export const useChatMessages = (
   }, [chatRoomId]); // Only depend on chatRoomId
 
   const loadMoreMessages = () => {
-    if (messages.length < totalCount && !isLoading) {
+    if (hasMoreMessages && !isLoading) {
       const newParams = {
         ...params,
         page: params.page + 1,
@@ -124,6 +131,7 @@ export const useChatMessages = (
     isLoading,
     error,
     totalCount,
+    hasMoreMessages,
     loadMoreMessages,
     refreshMessages: () => fetchMessages({ page: 1, limit: params.limit }),
     addMessage,

@@ -9,6 +9,7 @@ interface ChatMessageListProps {
   messages: Message[];
   currentUserId: string;
   isLoading: boolean;
+  hasMoreMessages?: boolean;
   loadMoreMessages: () => void;
   typingUsers?: string[]; // New prop for users who are typing
 }
@@ -17,6 +18,7 @@ export const ChatMessageList = ({
   messages,
   currentUserId,
   isLoading,
+  hasMoreMessages = true,
   loadMoreMessages,
   typingUsers = [],
 }: ChatMessageListProps) => {
@@ -24,6 +26,7 @@ export const ChatMessageList = ({
   const messageContainerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLength = useRef(messages.length);
   const isUserScrolled = useRef(false);
+  const prevScrollHeight = useRef(0);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [hasNewMessagesBelow, setHasNewMessagesBelow] = useState(false);
 
@@ -88,10 +91,12 @@ export const ChatMessageList = ({
   }, [typingUsers]); // Handle scroll to load more messages and track user scroll behavior
   const handleScroll = () => {
     if (messageContainerRef.current) {
-      const { scrollTop } = messageContainerRef.current;
+      const { scrollTop, scrollHeight } = messageContainerRef.current;
 
-      // Load more messages when scrolled to top
-      if (scrollTop === 0 && !isLoading) {
+      // Load more messages when scrolled near the top (threshold of 50px)
+      if (scrollTop <= 50 && !isLoading && hasMoreMessages) {
+        // Store current scroll height to maintain position after loading
+        prevScrollHeight.current = scrollHeight;
         loadMoreMessages();
       }
 
