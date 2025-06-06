@@ -54,7 +54,7 @@ export const ChatMessageList = ({
   return (
     <div
       ref={messageContainerRef}
-      className="flex-1 overflow-y-auto p-4 bg-white h-full"
+      className="flex flex-col p-4 bg-white h-full overflow-y-auto"
       onScroll={handleScroll}
     >
       {isLoading && (

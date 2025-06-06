@@ -130,10 +130,10 @@ export default function ChatRoomPage() {
     }
   };
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen w-full overflow-hidden">
       {/* Chat rooms sidebar */}
-      <div className="w-80 h-full flex flex-col">
-        <div className="p-4 border-b flex items-center justify-between">
+      <div className="w-80 flex flex-col h-full border-r border-slate-200">
+        <div className="p-3 border-b flex items-center justify-between shrink-0">
           <h2 className="font-semibold text-slate-800">Conversations</h2>
           <Button
             size="sm"
@@ -164,9 +164,9 @@ export default function ChatRoomPage() {
         </div>
       </div>
       {/* Chat area - fixed height, no scroll on container */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
         {isLoadingRoom ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center flex-grow">
             <div className="animate-spin h-8 w-8 border-4 border-primary-500 rounded-full border-t-transparent"></div>
           </div>
         ) : currentChatRoom ? (

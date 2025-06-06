@@ -15,7 +15,7 @@ export default function DashboardLayout({
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-slate-50 flex">
+      <div className="h-screen flex overflow-hidden bg-slate-50">
         {/* Sidebar - fixed, no scroll */}
         <aside
           className={`${
@@ -160,10 +160,8 @@ export default function DashboardLayout({
           </div>
         </aside>
 
-        {/* Main content - scrollable */}
-        <main className="flex-1 overflow-y-auto p-6 h-screen">
-          <div className="max-w-7xl mx-auto">{children}</div>
-        </main>
+        {/* Main content - adaptive container */}
+        <main className="flex-1 h-screen">{children}</main>
       </div>
     </AuthGuard>
   );

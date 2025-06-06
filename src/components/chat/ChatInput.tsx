@@ -24,14 +24,13 @@ export const ChatInput = ({ onSendMessage, isConnected }: ChatInputProps) => {
       handleSubmit(e);
     }
   };
-
   return (
-    <form onSubmit={handleSubmit} className="border-t p-4 bg-white">
+    <form onSubmit={handleSubmit} className="border-t p-3 bg-white shrink-0">
       <div className="flex items-end gap-2">
         <div className="flex-1 relative">
           {" "}
           <textarea
-            className="w-full border rounded-lg p-3 pr-10 resize-none h-20 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500"
+            className="w-full border rounded-lg p-3 pr-10 resize-none h-16 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500"
             placeholder={
               isConnected ? "Type a message..." : "Connecting to chat..."
             }

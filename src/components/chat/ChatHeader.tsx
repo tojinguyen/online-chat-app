@@ -34,9 +34,8 @@ export const ChatHeader = ({
   const isOnline = otherMember
     ? onlineMembers.includes(otherMember.user_id)
     : chatRoom.members.some((member) => onlineMembers.includes(member.user_id));
-
   return (
-    <div className="p-4 border-b bg-white shadow-sm flex items-center justify-between">
+    <div className="p-3 border-b bg-white shadow-sm flex items-center justify-between shrink-0">
       <div className="flex items-center">
         <div className="relative">
           <Avatar src={avatarUrl} alt={displayName} size="md" />
