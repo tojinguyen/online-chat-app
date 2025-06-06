@@ -60,11 +60,11 @@ export const chatService = {
   getChatRoomMessages: async (
     roomId: string,
     params?: ChatPaginationParams
-  ): Promise<ApiResponse<PaginatedResponse<Message>>> => {
+  ): Promise<ApiResponse<Message[]>> => {
     const queryParams = params
       ? `?page=${params.page}&limit=${params.limit}`
       : "";
-    return await apiClient.get<PaginatedResponse<Message>>(
+    return await apiClient.get<Message[]>(
       `${CHAT_API_ENDPOINTS.CHAT_ROOM_MESSAGES(roomId)}${queryParams}`
     );
   },

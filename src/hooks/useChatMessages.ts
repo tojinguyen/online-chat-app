@@ -30,7 +30,7 @@ export const useChatMessages = (
 
         if (response.success) {
           // Sort messages by creation date
-          const sortedMessages = [...response.data.data].sort(
+          const sortedMessages = [...response.data].sort(
             (a, b) =>
               new Date(a.created_at).getTime() -
               new Date(b.created_at).getTime()
@@ -43,7 +43,7 @@ export const useChatMessages = (
             setMessages((prev) => [...sortedMessages, ...prev]);
           }
 
-          setTotalCount(response.data.total_count);
+          setTotalCount(response.data.length);
         } else {
           setError(response.message);
         }
@@ -63,9 +63,43 @@ export const useChatMessages = (
       setMessages([]);
       setTotalCount(0);
       setParams({ page: 1, limit: 20 });
-      fetchMessages({ page: 1, limit: 20 });
+
+      // Use inline function to avoid dependency on fetchMessages
+      const loadInitialMessages = async () => {
+        try {
+          setIsLoading(true);
+          setError(null);
+
+          const initialParams = { page: 1, limit: 20 };
+          const response = await chatService.getChatRoomMessages(
+            chatRoomId,
+            initialParams
+          );
+
+          if (response.success) {
+            // Sort messages by creation date
+            const sortedMessages = [...response.data].sort(
+              (a, b) =>
+                new Date(a.created_at).getTime() -
+                new Date(b.created_at).getTime()
+            );
+
+            setMessages(sortedMessages);
+            setTotalCount(response.data.length);
+          } else {
+            setError(response.message);
+          }
+        } catch (err) {
+          setError("Failed to fetch messages");
+          console.error("Error fetching messages:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      loadInitialMessages();
     }
-  }, [chatRoomId, fetchMessages]);
+  }, [chatRoomId]); // Only depend on chatRoomId
 
   const loadMoreMessages = () => {
     if (messages.length < totalCount && !isLoading) {
