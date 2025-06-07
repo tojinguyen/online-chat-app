@@ -84,6 +84,7 @@ class WebSocketService {
 
   // Join a chat room
   joinChatRoom(chatRoomId: string) {
+    console.log("joinChatRoom called with chatRoomId:", chatRoomId); // Debug log
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       const message = {
         type: "JOIN_ROOM",
@@ -92,6 +93,7 @@ class WebSocketService {
         },
       };
 
+      console.log("Sending JOIN_ROOM message:", JSON.stringify(message)); // Debug log
       this.socket.send(JSON.stringify(message));
     } else {
       console.error("WebSocket is not connected");

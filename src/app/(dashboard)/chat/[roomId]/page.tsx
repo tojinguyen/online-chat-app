@@ -18,6 +18,7 @@ export default function ChatRoomPage() {
   const params = useParams();
   const router = useRouter();
   const roomId = params.roomId as string;
+  console.log("ChatRoomPage - params:", params, "roomId:", roomId); // Debug log
   const { user } = useAuthContext();
 
   const { chatRooms, isLoading: isLoadingRooms } = useChatRooms();

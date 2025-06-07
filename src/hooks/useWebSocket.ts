@@ -24,7 +24,14 @@ export const useWebSocket = (chatRoomId?: string) => {
 
   useEffect(() => {
     // Join the specified chat room
+    console.log(
+      "useWebSocket effect - chatRoomId:",
+      chatRoomId,
+      "isConnected:",
+      isConnected
+    ); // Debug log
     if (chatRoomId && isConnected) {
+      console.log("Calling joinChatRoom with:", chatRoomId); // Debug log
       webSocketService.joinChatRoom(chatRoomId);
 
       // Leave the chat room when unmounting or changing rooms
