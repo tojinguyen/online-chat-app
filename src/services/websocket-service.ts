@@ -1,15 +1,41 @@
 import { AUTH_CONSTANTS } from "@/constants";
-import { ChatRoom, Message } from "@/types";
+import {
+  ActiveUsersListPayload,
+  ChatMessageReceivePayload,
+  ChatMessageSendPayload,
+  ChatRoom,
+  ErrorPayload,
+  JoinRoomPayload,
+  JoinSuccessPayload,
+  LeaveRoomPayload,
+  Message,
+  MessageType,
+  ReadReceiptPayload,
+  SocketMessage,
+  SocketMessageType,
+  TypingPayload,
+  UserEventPayload,
+} from "@/types";
 
 type MessageHandler = (message: Message) => void;
 type ChatRoomUpdateHandler = (chatRoom: ChatRoom) => void;
 type ConnectionStatusHandler = (isConnected: boolean) => void;
+type UserEventHandler = (event: UserEventPayload) => void;
+type ActiveUsersHandler = (users: ActiveUsersListPayload) => void;
+type TypingHandler = (typing: TypingPayload) => void;
+type ErrorHandler = (error: ErrorPayload) => void;
+type JoinSuccessHandler = (success: JoinSuccessPayload) => void;
 
 class WebSocketService {
   private socket: WebSocket | null = null;
   private messageHandlers: MessageHandler[] = [];
   private chatRoomUpdateHandlers: ChatRoomUpdateHandler[] = [];
   private connectionStatusHandlers: ConnectionStatusHandler[] = [];
+  private userEventHandlers: UserEventHandler[] = [];
+  private activeUsersHandlers: ActiveUsersHandler[] = [];
+  private typingHandlers: TypingHandler[] = [];
+  private errorHandlers: ErrorHandler[] = [];
+  private joinSuccessHandlers: JoinSuccessHandler[] = [];
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
@@ -68,18 +94,20 @@ class WebSocketService {
   sendMessage(
     chatRoomId: string,
     content: string,
-    type: string = "TEXT",
-    mimeType?: string
+    mimeType?: string,
+    tempMessageId?: string
   ) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      const message = {
-        type: "SEND_MESSAGE",
-        data: {
-          chat_room_id: chatRoomId,
-          content,
-          message_type: type,
-          ...(mimeType && { mime_type: mimeType }),
-        },
+      const payload: ChatMessageSendPayload = {
+        chat_room_id: chatRoomId,
+        content,
+        ...(mimeType && { mime_type: mimeType }),
+        ...(tempMessageId && { temp_message_id: tempMessageId }),
+      };
+
+      const message: SocketMessage<ChatMessageSendPayload> = {
+        type: SocketMessageType.SEND_MESSAGE,
+        data: payload,
       };
 
       this.socket.send(JSON.stringify(message));
@@ -92,11 +120,13 @@ class WebSocketService {
   joinChatRoom(chatRoomId: string) {
     console.log("joinChatRoom called with chatRoomId:", chatRoomId); // Debug log
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      const message = {
-        type: "JOIN_ROOM",
-        data: {
-          chat_room_id: chatRoomId,
-        },
+      const payload: JoinRoomPayload = {
+        chat_room_id: chatRoomId,
+      };
+
+      const message: SocketMessage<JoinRoomPayload> = {
+        type: SocketMessageType.JOIN_ROOM,
+        data: payload,
       };
 
       console.log("Sending JOIN_ROOM message:", JSON.stringify(message)); // Debug log
@@ -109,11 +139,58 @@ class WebSocketService {
   // Leave a chat room
   leaveChatRoom(chatRoomId: string) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      const message = {
-        type: "LEAVE_ROOM",
-        data: {
-          chat_room_id: chatRoomId,
-        },
+      const payload: LeaveRoomPayload = {
+        chat_room_id: chatRoomId,
+      };
+
+      const message: SocketMessage<LeaveRoomPayload> = {
+        type: SocketMessageType.LEAVE_ROOM,
+        data: payload,
+      };
+
+      this.socket.send(JSON.stringify(message));
+    }
+  }
+
+  // Send typing indicator
+  sendTyping(chatRoomId: string, isTyping: boolean) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      const payload: TypingPayload = {
+        chat_room_id: chatRoomId,
+        is_typing: isTyping,
+      };
+
+      const message: SocketMessage<TypingPayload> = {
+        type: SocketMessageType.TYPING,
+        data: payload,
+      };
+
+      this.socket.send(JSON.stringify(message));
+    }
+  }
+
+  // Send read receipt
+  sendReadReceipt(chatRoomId: string, messageId: string) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      const payload: ReadReceiptPayload = {
+        chat_room_id: chatRoomId,
+        message_id: messageId,
+      };
+
+      const message: SocketMessage<ReadReceiptPayload> = {
+        type: SocketMessageType.READ_RECEIPT,
+        data: payload,
+      };
+
+      this.socket.send(JSON.stringify(message));
+    }
+  }
+
+  // Send ping to keep connection alive
+  sendPing() {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      const message: SocketMessage = {
+        type: SocketMessageType.PING,
       };
 
       this.socket.send(JSON.stringify(message));
@@ -147,6 +224,53 @@ class WebSocketService {
       );
     };
   }
+
+  // Register a handler for user events (join/leave)
+  onUserEvent(handler: UserEventHandler) {
+    this.userEventHandlers.push(handler);
+    return () => {
+      this.userEventHandlers = this.userEventHandlers.filter(
+        (h) => h !== handler
+      );
+    };
+  }
+
+  // Register a handler for active users list
+  onActiveUsers(handler: ActiveUsersHandler) {
+    this.activeUsersHandlers.push(handler);
+    return () => {
+      this.activeUsersHandlers = this.activeUsersHandlers.filter(
+        (h) => h !== handler
+      );
+    };
+  }
+
+  // Register a handler for typing indicators
+  onTyping(handler: TypingHandler) {
+    this.typingHandlers.push(handler);
+    return () => {
+      this.typingHandlers = this.typingHandlers.filter((h) => h !== handler);
+    };
+  }
+
+  // Register a handler for errors
+  onError(handler: ErrorHandler) {
+    this.errorHandlers.push(handler);
+    return () => {
+      this.errorHandlers = this.errorHandlers.filter((h) => h !== handler);
+    };
+  }
+
+  // Register a handler for join success
+  onJoinSuccess(handler: JoinSuccessHandler) {
+    this.joinSuccessHandlers.push(handler);
+    return () => {
+      this.joinSuccessHandlers = this.joinSuccessHandlers.filter(
+        (h) => h !== handler
+      );
+    };
+  }
+
   // Handle WebSocket open event
   private handleOpen() {
     console.log("WebSocket connection established");
@@ -159,24 +283,89 @@ class WebSocketService {
     console.log("WebSocket message received:", event.data);
 
     try {
-      const data = JSON.parse(event.data);
-      console.log("Parsed message data:", data);
+      const socketMessage: SocketMessage = JSON.parse(event.data);
+      console.log("Parsed message data:", socketMessage);
 
-      switch (data.type) {
-        case "NEW_MESSAGE":
-          console.log("Processing NEW_MESSAGE:", data.data);
-          this.notifyMessageHandlers(data.data as Message);
+      switch (socketMessage.type) {
+        case SocketMessageType.NEW_MESSAGE:
+          console.log("Processing NEW_MESSAGE:", socketMessage.data);
+          // Convert the payload to Message format for backward compatibility
+          if (socketMessage.data) {
+            const payload = socketMessage.data as ChatMessageReceivePayload;
+            const message: Message = {
+              id: payload.message_id,
+              chat_room_id: payload.chat_room_id,
+              sender_id: socketMessage.sender_id || "",
+              sender_name: payload.sender_name || "",
+              avatar_url: payload.avatar_url || "",
+              content: payload.content,
+              type: MessageType.TEXT, // Default to TEXT, backend should provide this
+              mime_type: payload.mime_type,
+              created_at: new Date().toISOString(),
+            };
+            this.notifyMessageHandlers(message);
+          }
           break;
-        case "CHAT_ROOM_UPDATE":
-          console.log("Processing CHAT_ROOM_UPDATE:", data.data);
-          this.notifyChatRoomUpdateHandlers(data.data as ChatRoom);
+
+        case SocketMessageType.CHAT_ROOM_UPDATE:
+          console.log("Processing CHAT_ROOM_UPDATE:", socketMessage.data);
+          this.notifyChatRoomUpdateHandlers(socketMessage.data as ChatRoom);
           break;
+
+        case SocketMessageType.JOIN_SUCCESS:
+          console.log("Processing JOIN_SUCCESS:", socketMessage.data);
+          if (socketMessage.data) {
+            this.notifyJoinSuccessHandlers(
+              socketMessage.data as JoinSuccessPayload
+            );
+          }
+          break;
+
+        case SocketMessageType.JOIN_ERROR:
+        case SocketMessageType.ERROR:
+          console.log("Processing ERROR:", socketMessage.data);
+          if (socketMessage.data) {
+            this.notifyErrorHandlers(socketMessage.data as ErrorPayload);
+          }
+          break;
+
+        case SocketMessageType.USER_JOINED:
+        case SocketMessageType.USER_LEFT:
+          console.log(`Processing ${socketMessage.type}:`, socketMessage.data);
+          if (socketMessage.data) {
+            this.notifyUserEventHandlers(
+              socketMessage.data as UserEventPayload
+            );
+          }
+          break;
+
+        case SocketMessageType.USERS:
+          console.log("Processing USERS:", socketMessage.data);
+          if (socketMessage.data) {
+            this.notifyActiveUsersHandlers(
+              socketMessage.data as ActiveUsersListPayload
+            );
+          }
+          break;
+
+        case SocketMessageType.TYPING:
+          console.log("Processing TYPING:", socketMessage.data);
+          if (socketMessage.data) {
+            this.notifyTypingHandlers(socketMessage.data as TypingPayload);
+          }
+          break;
+
+        case SocketMessageType.PONG:
+          console.log("Received PONG");
+          // Handle pong response
+          break;
+
         default:
           console.log(
             "Unknown message type received:",
-            data.type,
+            socketMessage.type,
             "Full data:",
-            data
+            socketMessage
           );
       }
     } catch (error) {
@@ -242,6 +431,31 @@ class WebSocketService {
   // Notify all connection status handlers
   private notifyConnectionStatus(isConnected: boolean) {
     this.connectionStatusHandlers.forEach((handler) => handler(isConnected));
+  }
+
+  // Notify all user event handlers
+  private notifyUserEventHandlers(event: UserEventPayload) {
+    this.userEventHandlers.forEach((handler) => handler(event));
+  }
+
+  // Notify all active users handlers
+  private notifyActiveUsersHandlers(users: ActiveUsersListPayload) {
+    this.activeUsersHandlers.forEach((handler) => handler(users));
+  }
+
+  // Notify all typing handlers
+  private notifyTypingHandlers(typing: TypingPayload) {
+    this.typingHandlers.forEach((handler) => handler(typing));
+  }
+
+  // Notify all error handlers
+  private notifyErrorHandlers(error: ErrorPayload) {
+    this.errorHandlers.forEach((handler) => handler(error));
+  }
+
+  // Notify all join success handlers
+  private notifyJoinSuccessHandlers(success: JoinSuccessPayload) {
+    this.joinSuccessHandlers.forEach((handler) => handler(success));
   }
 }
 
