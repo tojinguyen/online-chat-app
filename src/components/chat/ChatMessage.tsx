@@ -53,7 +53,9 @@ export const ChatMessage = ({ message, isCurrentUser }: ChatMessageProps) => {
         <div className="space-y-1">
           {parsedContent.map((content, index) => (
             <MessageMedia
-              key={`${message.id}-content-${index}`}
+              key={`msg-${message.id || "unknown"}-content-${index}-${
+                content.type || "text"
+              }`}
               content={content}
               isCurrentUser={isCurrentUser}
             />

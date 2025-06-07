@@ -120,9 +120,18 @@ export const useChatMessages = (
   };
 
   const addMessage = (message: Message) => {
-    // Check if message already exists
-    if (!messages.some((m) => m.id === message.id)) {
-      setMessages((prev) => [...prev, message]);
+    // Simple duplicate check by ID
+    const isDuplicate = messages.some((m) => m.id === message.id);
+
+    if (!isDuplicate) {
+      setMessages((prev) => {
+        // Add the new message and sort by creation date
+        const newMessages = [...prev, message];
+        return newMessages.sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+      });
     }
   };
 

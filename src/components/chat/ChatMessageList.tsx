@@ -136,8 +136,7 @@ export const ChatMessageList = ({
           <div className="flex justify-center my-2">
             <div className="animate-spin h-5 w-5 border-2 border-primary-500 rounded-full border-t-transparent"></div>
           </div>
-        )}
-
+        )}{" "}
         {messages.map((message) => (
           <ChatMessage
             key={message.id}
@@ -145,11 +144,12 @@ export const ChatMessageList = ({
             isCurrentUser={message.sender_id === currentUserId}
           />
         ))}
-
-        {typingUsers.map((userName) => (
-          <TypingIndicator key={`typing-${userName}`} userName={userName} />
+        {typingUsers.map((userName, index) => (
+          <TypingIndicator
+            key={`typing-${userName}-${index}`}
+            userName={userName}
+          />
         ))}
-
         <div ref={messagesEndRef} />
       </div>
 

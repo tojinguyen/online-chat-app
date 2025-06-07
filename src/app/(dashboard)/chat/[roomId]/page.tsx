@@ -10,7 +10,7 @@ import { Button } from "@/components/ui";
 import { useAuthContext } from "@/context/AuthContext";
 import { useChatMessages, useChatRooms, useWebSocket } from "@/hooks";
 import { chatService } from "@/services";
-import { ChatRoom, Message, MessageType } from "@/types";
+import { ChatRoom } from "@/types";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -18,7 +18,6 @@ export default function ChatRoomPage() {
   const params = useParams();
   const router = useRouter();
   const roomId = params.roomId as string;
-  console.log("ChatRoomPage - params:", params, "roomId:", roomId); // Debug log
   const { user } = useAuthContext();
 
   const { chatRooms, isLoading: isLoadingRooms } = useChatRooms();
@@ -110,27 +109,11 @@ export default function ChatRoomPage() {
     }, 10000); // Check every 10 seconds
 
     return () => clearInterval(typingInterval);
-  }, [currentChatRoom, currentUserId]);
-
-  // Handle sending a new message
+  }, [currentChatRoom, currentUserId]); // Handle sending a new message
   const handleSendMessage = (content: string, mimeType?: string) => {
     if (content.trim() && isConnected) {
       sendMessage(content, "TEXT", mimeType);
-
-      // Optimistic update
-      const tempMessage: Message = {
-        id: `temp-${Date.now()}`,
-        chat_room_id: roomId,
-        sender_id: currentUserId,
-        sender_name: "You", // In a real app, get the current user's name
-        avatar_url: "", // In a real app, get the current user's avatar
-        content: content,
-        type: "TEXT" as MessageType,
-        mime_type: mimeType,
-        created_at: new Date().toISOString(),
-      };
-
-      addMessage(tempMessage);
+      // No optimistic update - wait for server response via WebSocket
     }
   };
   return (

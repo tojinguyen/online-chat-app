@@ -156,21 +156,36 @@ class WebSocketService {
 
   // Handle WebSocket message event
   private handleMessage(event: MessageEvent) {
+    console.log("WebSocket message received:", event.data);
+
     try {
       const data = JSON.parse(event.data);
+      console.log("Parsed message data:", data);
 
       switch (data.type) {
         case "NEW_MESSAGE":
+          console.log("Processing NEW_MESSAGE:", data.data);
           this.notifyMessageHandlers(data.data as Message);
           break;
         case "CHAT_ROOM_UPDATE":
+          console.log("Processing CHAT_ROOM_UPDATE:", data.data);
           this.notifyChatRoomUpdateHandlers(data.data as ChatRoom);
           break;
         default:
-          console.log("Unknown message type:", data.type);
+          console.log(
+            "Unknown message type received:",
+            data.type,
+            "Full data:",
+            data
+          );
       }
     } catch (error) {
-      console.error("Error parsing WebSocket message:", error);
+      console.error(
+        "Error parsing WebSocket message:",
+        error,
+        "Raw message:",
+        event.data
+      );
     }
   }
 
