@@ -72,15 +72,15 @@ export const WebSocketDemo = () => {
         setUsers(usersList.users);
       }
     );
-
     const unsubscribeTyping = onTyping((typing: TypingPayload) => {
       console.log("Typing event:", typing);
       if (typing.is_typing) {
-        setTypingUsers((prev) => [...prev, typing.chat_room_id]);
+        setTypingUsers((prev) => [
+          ...prev.filter((id) => id !== typing.user_id),
+          typing.user_id,
+        ]);
       } else {
-        setTypingUsers((prev) =>
-          prev.filter((id) => id !== typing.chat_room_id)
-        );
+        setTypingUsers((prev) => prev.filter((id) => id !== typing.user_id));
       }
     });
 
@@ -292,7 +292,6 @@ export const WebSocketDemo = () => {
           </p>
         </div>
       </Card>
-
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Chat Room Controls</h2>
 
@@ -325,7 +324,6 @@ export const WebSocketDemo = () => {
           </div>
         </div>
       </Card>
-
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Send Message</h2>
 
@@ -355,7 +353,6 @@ export const WebSocketDemo = () => {
           </Button>
         </div>
       </Card>
-
       {/* Messages */}
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">
@@ -389,7 +386,6 @@ export const WebSocketDemo = () => {
           )}
         </div>
       </Card>
-
       {/* Active Users */}
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">
@@ -420,22 +416,20 @@ export const WebSocketDemo = () => {
             <p className="text-gray-500">No active users</p>
           )}
         </div>
-      </Card>
-
+      </Card>{" "}
       {/* Typing Indicators */}
       {typingUsers.length > 0 && (
         <Card className="p-6">
           <h2 className="text-xl font-semibold mb-4">Typing Indicators</h2>
           <div className="space-y-1">
-            {typingUsers.map((roomId) => (
-              <p key={roomId} className="text-gray-600">
-                Someone is typing in room: {roomId}
+            {typingUsers.map((userId) => (
+              <p key={userId} className="text-gray-600">
+                User {userId} is typing...
               </p>
             ))}
           </div>
         </Card>
       )}
-
       {/* Errors */}
       {errors.length > 0 && (
         <Card className="p-6 border-red-200">

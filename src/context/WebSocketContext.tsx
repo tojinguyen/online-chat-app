@@ -51,7 +51,9 @@ type WebSocketContextType = {
   onActiveUsers: (
     handler: (users: ActiveUsersListPayload) => void
   ) => () => void;
-  onTyping: (handler: (typing: TypingPayload) => void) => () => void;
+  onTyping: (
+    handler: (typing: TypingPayload, senderId?: string) => void
+  ) => () => void;
   onError: (handler: (error: ErrorPayload) => void) => () => void;
   onJoinSuccess: (handler: (success: JoinSuccessPayload) => void) => () => void;
 };

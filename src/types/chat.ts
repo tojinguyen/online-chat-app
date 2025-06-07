@@ -111,7 +111,8 @@ export interface LeaveRoomPayload {
 }
 
 export interface TypingPayload {
-  chat_room_id: string;
+  user_id: string;
+  chat_room_id?: string;
   is_typing: boolean;
 }
 

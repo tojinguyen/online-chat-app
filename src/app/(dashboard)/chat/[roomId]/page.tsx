@@ -8,7 +8,12 @@ import {
 } from "@/components/chat";
 import { Button } from "@/components/ui";
 import { useAuthContext } from "@/context/AuthContext";
-import { useChatMessages, useChatRooms, useWebSocket } from "@/hooks";
+import {
+  useChatMessages,
+  useChatRooms,
+  useTyping,
+  useWebSocket,
+} from "@/hooks";
 import { chatService } from "@/services";
 import { ChatRoom } from "@/types";
 import { useParams, useRouter } from "next/navigation";
@@ -33,10 +38,16 @@ export default function ChatRoomPage() {
     sendMessage,
     messages: wsMessages,
   } = useWebSocket(roomId);
+
   const [currentChatRoom, setCurrentChatRoom] = useState<ChatRoom | null>(null);
   const [isLoadingRoom, setIsLoadingRoom] = useState(true);
   const [onlineMembers, setOnlineMembers] = useState<string[]>([]);
-  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+
+  // Use the real typing hook
+  const { typingUsers, startTyping, stopTyping } = useTyping({
+    chatRoomId: roomId,
+    members: currentChatRoom?.members || [],
+  });
 
   // Get current user ID from authentication context
   const currentUserId = user?.userId || "current-user-id"; // Fallback for development
@@ -81,35 +92,7 @@ export default function ChatRoomPage() {
     fetchChatRoom();
   }, [roomId]);
 
-  // Simulate typing indicators (in a real app, this would come from WebSocket)
-  useEffect(() => {
-    if (!currentChatRoom) return;
-
-    // Randomly show typing indicators for demonstration purposes
-    const typingInterval = setInterval(() => {
-      const shouldShowTyping = Math.random() > 0.7; // 30% chance
-
-      if (shouldShowTyping && currentChatRoom.members.length > 1) {
-        // Get a random member that isn't the current user
-        const otherMembers = currentChatRoom.members.filter(
-          (member) => member.user_id !== currentUserId
-        );
-
-        if (otherMembers.length > 0) {
-          const randomMember =
-            otherMembers[Math.floor(Math.random() * otherMembers.length)];
-          setTypingUsers([randomMember.name]);
-
-          // Clear typing indicator after a few seconds
-          setTimeout(() => {
-            setTypingUsers([]);
-          }, 3000);
-        }
-      }
-    }, 10000); // Check every 10 seconds
-
-    return () => clearInterval(typingInterval);
-  }, [currentChatRoom, currentUserId]); // Handle sending a new message
+  // Handle sending a new message
   const handleSendMessage = (content: string, mimeType?: string) => {
     if (content.trim() && isConnected) {
       sendMessage(content, "TEXT", mimeType);
@@ -186,7 +169,11 @@ export default function ChatRoomPage() {
                 typingUsers={typingUsers}
               />
             </div>
-            <ChatInput onSendMessage={handleSendMessage} />
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              onStartTyping={startTyping}
+              onStopTyping={stopTyping}
+            />
           </>
         ) : (
           <div className="flex items-center justify-center h-full text-slate-500">

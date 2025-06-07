@@ -22,7 +22,7 @@ type ChatRoomUpdateHandler = (chatRoom: ChatRoom) => void;
 type ConnectionStatusHandler = (isConnected: boolean) => void;
 type UserEventHandler = (event: UserEventPayload) => void;
 type ActiveUsersHandler = (users: ActiveUsersListPayload) => void;
-type TypingHandler = (typing: TypingPayload) => void;
+type TypingHandler = (typing: TypingPayload, senderId?: string) => void;
 type ErrorHandler = (error: ErrorPayload) => void;
 type JoinSuccessHandler = (success: JoinSuccessPayload) => void;
 
@@ -164,8 +164,20 @@ class WebSocketService {
 
   // Send typing indicator
   sendTyping(chatRoomId: string, isTyping: boolean) {
+    console.log(
+      `sendTyping called with chatRoomId: ${chatRoomId}, isTyping: ${isTyping}`
+    );
+    console.log(`WebSocket state: ${this.socket?.readyState}`);
+
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      // Get user ID from localStorage
+      const userInfo = localStorage.getItem(
+        AUTH_CONSTANTS.STORAGE_KEYS.USER_INFO
+      );
+      const userId = userInfo ? JSON.parse(userInfo).userId : "unknown-user";
+
       const payload: TypingPayload = {
+        user_id: userId,
         chat_room_id: chatRoomId,
         is_typing: isTyping,
       };
@@ -175,7 +187,10 @@ class WebSocketService {
         data: payload,
       };
 
+      console.log("Sending typing message:", JSON.stringify(message));
       this.socket.send(JSON.stringify(message));
+    } else {
+      console.error("WebSocket is not connected or not open");
     }
   }
 
@@ -401,7 +416,8 @@ class WebSocketService {
         case SocketMessageType.TYPING:
           console.log("Processing TYPING:", socketMessage.data);
           if (socketMessage.data) {
-            this.notifyTypingHandlers(socketMessage.data as TypingPayload);
+            const typingPayload = socketMessage.data as TypingPayload;
+            this.notifyTypingHandlers(typingPayload, typingPayload.user_id);
           }
           break;
 
@@ -582,8 +598,8 @@ class WebSocketService {
   }
 
   // Notify all typing handlers
-  private notifyTypingHandlers(typing: TypingPayload) {
-    this.typingHandlers.forEach((handler) => handler(typing));
+  private notifyTypingHandlers(typing: TypingPayload, senderId?: string) {
+    this.typingHandlers.forEach((handler) => handler(typing, senderId));
   }
 
   // Notify all error handlers
