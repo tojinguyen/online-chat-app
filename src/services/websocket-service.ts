@@ -65,7 +65,12 @@ class WebSocketService {
   }
 
   // Send a message through the WebSocket
-  sendMessage(chatRoomId: string, content: string, type: string = "TEXT") {
+  sendMessage(
+    chatRoomId: string,
+    content: string,
+    type: string = "TEXT",
+    mimeType?: string
+  ) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       const message = {
         type: "SEND_MESSAGE",
@@ -73,6 +78,7 @@ class WebSocketService {
           chat_room_id: chatRoomId,
           content,
           message_type: type,
+          ...(mimeType && { mime_type: mimeType }),
         },
       };
 

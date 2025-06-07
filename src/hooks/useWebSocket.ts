@@ -74,9 +74,13 @@ export const useWebSocket = (chatRoomId?: string) => {
     };
   }, [chatRoomId]);
 
-  const sendMessage = (content: string, type: string = "TEXT") => {
+  const sendMessage = (
+    content: string,
+    type: string = "TEXT",
+    mimeType?: string
+  ) => {
     if (chatRoomId) {
-      webSocketService.sendMessage(chatRoomId, content, type);
+      webSocketService.sendMessage(chatRoomId, content, type, mimeType);
     }
   };
 

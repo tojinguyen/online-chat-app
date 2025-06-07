@@ -113,9 +113,9 @@ export default function ChatRoomPage() {
   }, [currentChatRoom, currentUserId]);
 
   // Handle sending a new message
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = (content: string, mimeType?: string) => {
     if (content.trim() && isConnected) {
-      sendMessage(content);
+      sendMessage(content, "TEXT", mimeType);
 
       // Optimistic update
       const tempMessage: Message = {
@@ -126,6 +126,7 @@ export default function ChatRoomPage() {
         avatar_url: "", // In a real app, get the current user's avatar
         content: content,
         type: "TEXT" as MessageType,
+        mime_type: mimeType,
         created_at: new Date().toISOString(),
       };
 

@@ -4,7 +4,7 @@ import { FormEvent, KeyboardEvent, useState } from "react";
 import { Button } from "../ui";
 
 interface ChatInputProps {
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, mimeType?: string) => void;
   isConnected: boolean;
 }
 
