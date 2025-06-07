@@ -95,7 +95,7 @@ export default function ChatRoomPage() {
   // Handle sending a new message
   const handleSendMessage = (content: string, mimeType?: string) => {
     if (content.trim() && isConnected) {
-      sendMessage(content, "TEXT", mimeType);
+      sendMessage(content, mimeType);
       // No optimistic update - wait for server response via WebSocket
     }
   };
