@@ -146,9 +146,9 @@ export const ChatMessageList = ({
           />
         ))}
 
-        {typingUsers.length > 0 && (
-          <TypingIndicator userName={typingUsers[0]} />
-        )}
+        {typingUsers.map((userName) => (
+          <TypingIndicator key={`typing-${userName}`} userName={userName} />
+        ))}
 
         <div ref={messagesEndRef} />
       </div>

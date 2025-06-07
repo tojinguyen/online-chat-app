@@ -12,10 +12,16 @@ interface ChatMessageProps {
 }
 
 export const ChatMessage = ({ message, isCurrentUser }: ChatMessageProps) => {
-  const formattedTime = formatDistanceToNow(new Date(message.created_at), {
-    addSuffix: true,
-    includeSeconds: true,
-  });
+  // Safe date parsing to avoid "Invalid time value" errors
+  const messageDate = new Date(message.created_at);
+  const isValidDate = !isNaN(messageDate.getTime());
+
+  const formattedTime = isValidDate
+    ? formatDistanceToNow(messageDate, {
+        addSuffix: true,
+        includeSeconds: true,
+      })
+    : "Unknown time";
 
   const parsedContent = parseMessageContent(message.content);
 
@@ -47,7 +53,7 @@ export const ChatMessage = ({ message, isCurrentUser }: ChatMessageProps) => {
         <div className="space-y-1">
           {parsedContent.map((content, index) => (
             <MessageMedia
-              key={index}
+              key={`${message.id}-content-${index}`}
               content={content}
               isCurrentUser={isCurrentUser}
             />
