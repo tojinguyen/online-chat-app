@@ -41,6 +41,13 @@ class WebSocketService {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 2000; // Start with 2 seconds
 
+  // Ping-pong mechanism for connection health
+  private pingInterval: NodeJS.Timeout | null = null;
+  private pongTimeout: NodeJS.Timeout | null = null;
+  private pingIntervalDuration = 30000; // Send ping every 30 seconds
+  private pongTimeoutDuration = 10000; // Wait 10 seconds for pong response
+  private lastPongReceived = Date.now();
+
   constructor() {}
 
   // Connect to the WebSocket server
@@ -86,6 +93,9 @@ class WebSocketService {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
+
+    // Clear ping-pong timers
+    this.clearPingPongTimers();
 
     this.reconnectAttempts = 0;
   }
@@ -197,6 +207,44 @@ class WebSocketService {
     }
   }
 
+  // Configure ping-pong settings
+  configurePingPong(options: { pingInterval?: number; pongTimeout?: number }) {
+    if (options.pingInterval && options.pingInterval > 0) {
+      this.pingIntervalDuration = options.pingInterval;
+    }
+    if (options.pongTimeout && options.pongTimeout > 0) {
+      this.pongTimeoutDuration = options.pongTimeout;
+    }
+
+    // Restart ping interval with new settings if connection is active
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      this.startPingInterval();
+    }
+
+    console.log(
+      `Ping-pong configured: interval=${this.pingIntervalDuration}ms, timeout=${this.pongTimeoutDuration}ms`
+    );
+  }
+
+  // Get connection health information
+  getConnectionHealth() {
+    const now = Date.now();
+    const timeSinceLastPong = now - this.lastPongReceived;
+    const isHealthy =
+      timeSinceLastPong < this.pingIntervalDuration + this.pongTimeoutDuration;
+
+    return {
+      isConnected: this.socket?.readyState === WebSocket.OPEN,
+      isHealthy,
+      lastPongReceived: new Date(this.lastPongReceived).toISOString(),
+      timeSinceLastPong,
+      pingInterval: this.pingIntervalDuration,
+      pongTimeout: this.pongTimeoutDuration,
+      reconnectAttempts: this.reconnectAttempts,
+      maxReconnectAttempts: this.maxReconnectAttempts,
+    };
+  }
+
   // Register a handler for incoming messages
   onMessage(handler: MessageHandler) {
     this.messageHandlers.push(handler);
@@ -275,6 +323,8 @@ class WebSocketService {
   private handleOpen() {
     console.log("WebSocket connection established");
     this.reconnectAttempts = 0;
+    this.lastPongReceived = Date.now();
+    this.startPingInterval();
     this.notifyConnectionStatus(true);
   }
 
@@ -357,7 +407,7 @@ class WebSocketService {
 
         case SocketMessageType.PONG:
           console.log("Received PONG");
-          // Handle pong response
+          this.handlePongReceived();
           break;
 
         default:
@@ -381,6 +431,10 @@ class WebSocketService {
   // Handle WebSocket close event
   private handleClose(event: CloseEvent) {
     console.log("WebSocket connection closed:", event.code, event.reason);
+
+    // Clear ping-pong timers when connection is closed
+    this.clearPingPongTimers();
+
     this.notifyConnectionStatus(false);
 
     // Try to reconnect if not closed intentionally
@@ -416,6 +470,90 @@ class WebSocketService {
       this.reconnectAttempts++;
       this.connect();
     }, delay);
+  }
+
+  // Ping-pong mechanism methods
+  private startPingInterval() {
+    // Clear any existing ping interval
+    this.clearPingPongTimers();
+
+    // Start sending pings at regular intervals
+    this.pingInterval = setInterval(() => {
+      this.sendPingToServer();
+    }, this.pingIntervalDuration);
+
+    console.log(`Started ping interval: ${this.pingIntervalDuration}ms`);
+  }
+
+  private sendPingToServer() {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      // Check if we received a pong for the last ping
+      const timeSinceLastPong = Date.now() - this.lastPongReceived;
+
+      if (
+        timeSinceLastPong >
+        this.pingIntervalDuration + this.pongTimeoutDuration
+      ) {
+        console.warn(
+          "Connection appears to be dead - no pong received in time"
+        );
+        this.handleConnectionDead();
+        return;
+      }
+
+      // Send ping and start pong timeout
+      this.sendPing();
+
+      // Clear any existing pong timeout
+      if (this.pongTimeout) {
+        clearTimeout(this.pongTimeout);
+      }
+
+      // Set timeout to detect if pong is not received
+      this.pongTimeout = setTimeout(() => {
+        console.warn("Pong timeout - connection may be dead");
+        this.handleConnectionDead();
+      }, this.pongTimeoutDuration);
+
+      console.log("Sent ping to server");
+    } else {
+      console.warn("Cannot send ping - WebSocket is not connected");
+      this.clearPingPongTimers();
+    }
+  }
+
+  private handlePongReceived() {
+    this.lastPongReceived = Date.now();
+
+    // Clear the pong timeout since we received the response
+    if (this.pongTimeout) {
+      clearTimeout(this.pongTimeout);
+      this.pongTimeout = null;
+    }
+
+    console.log("Pong received - connection is healthy");
+  }
+
+  private handleConnectionDead() {
+    console.error("Connection determined to be dead - forcing reconnection");
+    this.clearPingPongTimers();
+
+    // Close the connection and trigger reconnection
+    if (this.socket) {
+      this.socket.close();
+    }
+  }
+
+  private clearPingPongTimers() {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+
+    if (this.pongTimeout) {
+      clearTimeout(this.pongTimeout);
+      this.pongTimeout = null;
+    }
   }
 
   // Notify all message handlers

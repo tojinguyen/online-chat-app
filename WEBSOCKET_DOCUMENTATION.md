@@ -12,7 +12,7 @@ The WebSocket service has been updated to support all the message types and payl
 - `LEAVE_ROOM` - Leave a chat room
 - `TYPING` - Send typing indicators
 - `READ_RECEIPT` - Mark messages as read
-- `PING` - Keep connection alive
+- `PING` - Keep connection alive (automatic)
 
 ### Server -> Client Messages
 - `NEW_MESSAGE` - Receive new chat messages
@@ -21,7 +21,7 @@ The WebSocket service has been updated to support all the message types and payl
 - `USER_JOINED` / `USER_LEFT` - User presence updates
 - `USERS` - Active users list
 - `TYPING` - Typing indicators from other users
-- `PONG` - Ping response
+- `PONG` - Ping response (automatic)
 
 ## Usage Examples
 
@@ -106,6 +106,63 @@ useEffect(() => {
   };
 }, []);
 ```
+
+### Ping-Pong Connection Monitoring
+
+The WebSocket service automatically maintains connection health using a ping-pong mechanism:
+
+```typescript
+import { useWebSocketContext } from "@/context/WebSocketContext";
+
+const HealthMonitor = () => {
+  const { configurePingPong, getConnectionHealth } = useWebSocketContext();
+  const [health, setHealth] = useState(null);
+
+  useEffect(() => {
+    // Update health information every 2 seconds
+    const interval = setInterval(() => {
+      setHealth(getConnectionHealth());
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Configure ping settings (optional)
+  const updatePingSettings = () => {
+    configurePingPong({
+      pingInterval: 30000,  // Send ping every 30 seconds
+      pongTimeout: 10000    // Wait 10 seconds for pong response
+    });
+  };
+
+  return (
+    <div>
+      <h3>Connection Health</h3>
+      {health && (
+        <div>
+          <p>Status: {health.isHealthy ? 'Healthy' : 'Unhealthy'}</p>
+          <p>Last Pong: {health.lastPongReceived}</p>
+          <p>Time Since Last Pong: {health.timeSinceLastPong}ms</p>
+          <p>Reconnect Attempts: {health.reconnectAttempts}/{health.maxReconnectAttempts}</p>
+        </div>
+      )}
+      <button onClick={updatePingSettings}>Configure Ping Settings</button>
+    </div>
+  );
+};
+```
+
+**Default Settings:**
+- Ping Interval: 30 seconds
+- Pong Timeout: 10 seconds
+- Automatic reconnection on connection failure
+
+**Features:**
+- Automatic ping sending at configured intervals
+- Connection health monitoring via pong responses
+- Automatic reconnection when connection is determined dead
+- Configurable ping/pong timing
+- Real-time connection health status
 
 ### Room Management
 

@@ -23,6 +23,8 @@ export const WebSocketDemo = () => {
     sendTyping,
     sendReadReceipt,
     sendPing,
+    configurePingPong,
+    getConnectionHealth,
     joinRoom,
     leaveRoom,
     onMessage,
@@ -32,7 +34,6 @@ export const WebSocketDemo = () => {
     onError,
     onJoinSuccess,
   } = useWebSocketContext();
-
   const [chatRoomId, setChatRoomId] = useState("demo-room-123");
   const [messageContent, setMessageContent] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -40,6 +41,18 @@ export const WebSocketDemo = () => {
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [connectionHealth, setConnectionHealth] = useState<{
+    isConnected: boolean;
+    isHealthy: boolean;
+    lastPongReceived: string;
+    timeSinceLastPong: number;
+    pingInterval: number;
+    pongTimeout: number;
+    reconnectAttempts: number;
+    maxReconnectAttempts: number;
+  } | null>(null);
+  const [pingInterval, setPingInterval] = useState(30000);
+  const [pongTimeout, setPongTimeout] = useState(10000);
 
   useEffect(() => {
     // Register all the event handlers
@@ -109,6 +122,15 @@ export const WebSocketDemo = () => {
     };
   }, [onMessage, onUserEvent, onActiveUsers, onTyping, onError, onJoinSuccess]);
 
+  // Update connection health periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setConnectionHealth(getConnectionHealth());
+    }, 2000); // Update every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [getConnectionHealth]);
+
   const handleSendMessage = () => {
     if (messageContent.trim() && chatRoomId) {
       sendMessage(chatRoomId, messageContent.trim());
@@ -141,18 +163,23 @@ export const WebSocketDemo = () => {
       sendTyping(chatRoomId, false);
     }
   };
-
   const handleMarkAsRead = (messageId: string) => {
     if (chatRoomId) {
       sendReadReceipt(chatRoomId, messageId);
     }
   };
 
+  const handleUpdatePingConfig = () => {
+    configurePingPong({
+      pingInterval,
+      pongTimeout,
+    });
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <Card className="p-6">
         <h1 className="text-2xl font-bold mb-4">WebSocket Demo</h1>
-
         {/* Connection Status */}
         <div className="mb-4">
           <div
@@ -169,8 +196,7 @@ export const WebSocketDemo = () => {
             ></span>
             {isConnected ? "Connected" : "Disconnected"}
           </div>
-        </div>
-
+        </div>{" "}
         {/* Connection Controls */}
         <div className="flex gap-2 mb-4">
           <Button onClick={connect} disabled={isConnected}>
@@ -186,6 +212,84 @@ export const WebSocketDemo = () => {
           <Button onClick={sendPing} disabled={!isConnected}>
             Send Ping
           </Button>
+        </div>
+        {/* Connection Health */}
+        {connectionHealth && (
+          <div className="bg-gray-50 p-4 rounded-lg mb-4">
+            <h3 className="text-lg font-medium mb-2">Connection Health</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Status:</span>{" "}
+                <span
+                  className={
+                    connectionHealth.isHealthy
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }
+                >
+                  {connectionHealth.isHealthy ? "Healthy" : "Unhealthy"}
+                </span>
+              </div>
+              <div>
+                <span className="font-medium">Last Pong:</span>{" "}
+                <span className="text-gray-600">
+                  {new Date(
+                    connectionHealth.lastPongReceived
+                  ).toLocaleTimeString()}
+                </span>
+              </div>
+              <div>
+                <span className="font-medium">Time Since Last Pong:</span>{" "}
+                <span className="text-gray-600">
+                  {Math.round(connectionHealth.timeSinceLastPong / 1000)}s
+                </span>
+              </div>
+              <div>
+                <span className="font-medium">Reconnect Attempts:</span>{" "}
+                <span className="text-gray-600">
+                  {connectionHealth.reconnectAttempts}/
+                  {connectionHealth.maxReconnectAttempts}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Ping Configuration */}
+        <div className="bg-blue-50 p-4 rounded-lg mb-4">
+          <h3 className="text-lg font-medium mb-2">Ping-Pong Configuration</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Ping Interval (ms)
+              </label>
+              <Input
+                type="number"
+                value={pingInterval}
+                onChange={(e) => setPingInterval(Number(e.target.value))}
+                min={5000}
+                max={120000}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Pong Timeout (ms)
+              </label>
+              <Input
+                type="number"
+                value={pongTimeout}
+                onChange={(e) => setPongTimeout(Number(e.target.value))}
+                min={1000}
+                max={30000}
+              />
+            </div>
+          </div>
+          <Button onClick={handleUpdatePingConfig} className="mt-2" size="sm">
+            Update Configuration
+          </Button>
+          <p className="text-xs text-gray-600 mt-2">
+            Current: Ping every {connectionHealth?.pingInterval || 30000}ms,
+            Timeout after {connectionHealth?.pongTimeout || 10000}ms
+          </p>
         </div>
       </Card>
 

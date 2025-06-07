@@ -30,6 +30,20 @@ type WebSocketContextType = {
   sendTyping: (chatRoomId: string, isTyping: boolean) => void;
   sendReadReceipt: (chatRoomId: string, messageId: string) => void;
   sendPing: () => void;
+  configurePingPong: (options: {
+    pingInterval?: number;
+    pongTimeout?: number;
+  }) => void;
+  getConnectionHealth: () => {
+    isConnected: boolean;
+    isHealthy: boolean;
+    lastPongReceived: string;
+    timeSinceLastPong: number;
+    pingInterval: number;
+    pongTimeout: number;
+    reconnectAttempts: number;
+    maxReconnectAttempts: number;
+  };
   joinRoom: (chatRoomId: string) => void;
   leaveRoom: (chatRoomId: string) => void;
   onMessage: (handler: (message: Message) => void) => () => void;
@@ -116,10 +130,21 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
   const onError = (handler: (error: ErrorPayload) => void) => {
     return webSocketService.onError(handler);
   };
-
   const onJoinSuccess = (handler: (success: JoinSuccessPayload) => void) => {
     return webSocketService.onJoinSuccess(handler);
   };
+
+  const configurePingPong = (options: {
+    pingInterval?: number;
+    pongTimeout?: number;
+  }) => {
+    webSocketService.configurePingPong(options);
+  };
+
+  const getConnectionHealth = () => {
+    return webSocketService.getConnectionHealth();
+  };
+
   const value: WebSocketContextType = {
     isConnected,
     connect,
@@ -128,6 +153,8 @@ export const WebSocketProvider = ({ children }: { children: ReactNode }) => {
     sendTyping,
     sendReadReceipt,
     sendPing,
+    configurePingPong,
+    getConnectionHealth,
     joinRoom,
     leaveRoom,
     onMessage,
