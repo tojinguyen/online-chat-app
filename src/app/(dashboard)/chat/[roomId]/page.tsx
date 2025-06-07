@@ -203,10 +203,7 @@ export default function ChatRoomPage() {
                 typingUsers={typingUsers}
               />
             </div>
-            <ChatInput
-              onSendMessage={handleSendMessage}
-              isConnected={isConnected}
-            />
+            <ChatInput onSendMessage={handleSendMessage} />
           </>
         ) : (
           <div className="flex items-center justify-center h-full text-slate-500">

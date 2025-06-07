@@ -5,14 +5,13 @@ import { Button } from "../ui";
 
 interface ChatInputProps {
   onSendMessage: (content: string, mimeType?: string) => void;
-  isConnected: boolean;
 }
 
-export const ChatInput = ({ onSendMessage, isConnected }: ChatInputProps) => {
+export const ChatInput = ({ onSendMessage }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (message.trim() && isConnected) {
+    if (message.trim()) {
       onSendMessage(message.trim());
       setMessage("");
     }
@@ -39,11 +38,7 @@ export const ChatInput = ({ onSendMessage, isConnected }: ChatInputProps) => {
             onKeyDown={handleKeyDown}
           />
         </div>
-        <Button
-          type="submit"
-          disabled={!message.trim() || !isConnected}
-          className="h-10"
-        >
+        <Button type="submit" disabled={!message.trim()} className="h-10">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-5 w-5"
