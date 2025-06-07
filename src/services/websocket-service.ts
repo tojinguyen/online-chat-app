@@ -36,7 +36,7 @@ class WebSocketService {
         console.error("No token found for WebSocket connection");
         return;
       } // Using wss protocol for secure WebSocket connection
-      const wsUrl = `wss://localhost:8080/api/v1/ws?token=${token}`;
+      const wsUrl = `ws://localhost:8080/api/v1/ws?token=${token}`;
       this.socket = new WebSocket(wsUrl);
 
       this.socket.onopen = this.handleOpen.bind(this);

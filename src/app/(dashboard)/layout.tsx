@@ -2,16 +2,23 @@
 
 import { AuthGuard } from "@/components/auth";
 import { useAuthContext } from "@/context/AuthContext";
+import {
+  WebSocketProvider,
+  useWebSocketContext,
+} from "@/context/WebSocketContext";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { logout } = useAuthContext();
+  const { isConnected, connect } = useWebSocketContext();
+
+  // Initialize WebSocket connection when dashboard loads
+  useEffect(() => {
+    console.log("Dashboard: Initializing WebSocket connection");
+    connect();
+  }, [connect]);
 
   return (
     <AuthGuard>
@@ -23,13 +30,28 @@ export default function DashboardLayout({
           } bg-white shadow-md transition-all duration-300 flex flex-col h-screen sticky top-0`}
         >
           <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-            <h1
-              className={`font-bold text-primary-600 ${
-                isSidebarOpen ? "text-xl" : "hidden"
-              }`}
-            >
-              GoChat
-            </h1>
+            <div className="flex items-center">
+              <h1
+                className={`font-bold text-primary-600 ${
+                  isSidebarOpen ? "text-xl" : "hidden"
+                }`}
+              >
+                GoChat
+              </h1>
+              {/* WebSocket connection indicator */}
+              {isSidebarOpen && (
+                <div className="ml-2 flex items-center">
+                  <div
+                    className={`h-2 w-2 rounded-full ${
+                      isConnected ? "bg-green-500" : "bg-red-500"
+                    }`}
+                    title={`WebSocket ${
+                      isConnected ? "Connected" : "Disconnected"
+                    }`}
+                  />
+                </div>
+              )}
+            </div>
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-1 rounded-md hover:bg-slate-100 text-slate-500"
@@ -164,5 +186,17 @@ export default function DashboardLayout({
         <main className="flex-1 h-screen">{children}</main>
       </div>
     </AuthGuard>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <WebSocketProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </WebSocketProvider>
   );
 }

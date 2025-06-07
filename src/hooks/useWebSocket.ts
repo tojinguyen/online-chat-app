@@ -13,12 +13,12 @@ export const useWebSocket = (chatRoomId?: string) => {
   }, [messages]);
 
   useEffect(() => {
-    // Connect to WebSocket
+    // Connect to WebSocket if not already connected
     webSocketService.connect();
 
-    // Cleanup on unmount
+    // Cleanup on unmount - but don't disconnect as other components might be using it
     return () => {
-      webSocketService.disconnect();
+      // webSocketService.disconnect(); // Commented out to maintain global connection
     };
   }, []);
 
