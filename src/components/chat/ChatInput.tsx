@@ -199,7 +199,7 @@ export const ChatInput = ({
     };
   }, [isTyping, onStopTyping]);
   return (
-    <form onSubmit={handleSubmit} className="border-t p-3 bg-white shrink-0">
+    <div className="border-t bg-gradient-to-r from-white to-slate-50 p-4 shrink-0">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -211,76 +211,143 @@ export const ChatInput = ({
 
       {/* Upload progress indicator */}
       {isUploading && (
-        <div className="mb-2 p-2 bg-blue-50 rounded-lg">
-          <div className="flex items-center justify-between text-sm text-blue-700">
-            <span>Uploading file...</span>
-            <span>{uploadProgress}%</span>
+        <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 animate-fade-in">
+          <div className="flex items-center justify-between text-sm font-medium text-blue-800">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span>Uploading file...</span>
+            </div>
+            <span className="text-blue-700">{uploadProgress}%</span>
           </div>
-          <div className="w-full bg-blue-200 rounded-full h-2 mt-1">
+          <div className="w-full bg-blue-200 rounded-full h-2.5 mt-2 overflow-hidden">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${uploadProgress}%` }}
             ></div>
           </div>
         </div>
       )}
 
-      <div className="flex items-end gap-2">
-        {/* File upload button */}
-        <Button
-          type="button"
-          onClick={triggerFileUpload}
-          disabled={isUploading}
-          className="h-10 px-3"
-          variant="outline"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </Button>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="flex items-end gap-3">
+          {/* File upload button */}
+          <div className="relative group">
+            <Button
+              type="button"
+              onClick={triggerFileUpload}
+              disabled={isUploading}
+              variant="ghost"
+              size="md"
+              className="h-12 w-12 rounded-full bg-white border-2 border-slate-200 hover:border-primary-300 hover:bg-primary-50 transition-all duration-200 shadow-input group-hover:shadow-md"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className={`h-5 w-5 transition-colors duration-200 ${
+                  isUploading
+                    ? "text-slate-400"
+                    : "text-slate-600 group-hover:text-primary-600"
+                }`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </Button>
+            {/* Tooltip */}
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-slate-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+              Attach file
+            </div>
+          </div>
 
-        <div className="flex-1 relative">
-          <textarea
-            className="w-full border rounded-lg p-3 pr-10 resize-none h-16 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-500"
-            placeholder="Type a message..."
-            value={message}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            onBlur={() => {
-              // Stop typing when input loses focus
-              if (isTyping) {
-                setIsTyping(false);
-                onStopTyping?.();
-              }
-            }}
-            disabled={isUploading}
-          />
+          {/* Message input container */}
+          <div className="flex-1 relative">
+            <div className="relative bg-white rounded-2xl border-2 border-slate-200 focus-within:border-primary-400 focus-within:shadow-lg transition-all duration-200 shadow-input">
+              <textarea
+                className="w-full bg-transparent rounded-2xl px-4 py-3 pr-12 resize-none min-h-[48px] max-h-32 focus:outline-none placeholder-slate-400 text-slate-700 leading-relaxed"
+                placeholder="Type your message..."
+                value={message}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                onBlur={() => {
+                  // Stop typing when input loses focus
+                  if (isTyping) {
+                    setIsTyping(false);
+                    onStopTyping?.();
+                  }
+                }}
+                disabled={isUploading}
+                rows={1}
+                style={{
+                  height: "auto",
+                  minHeight: "48px",
+                }}
+                onInput={(e) => {
+                  e.currentTarget.style.height = "auto";
+                  e.currentTarget.style.height =
+                    Math.min(e.currentTarget.scrollHeight, 128) + "px";
+                }}
+              />
+
+              {/* Send button inside input */}
+              <div className="absolute right-2 bottom-2">
+                <Button
+                  type="submit"
+                  disabled={!message.trim() || isUploading}
+                  size="sm"
+                  className={`h-8 w-8 rounded-full p-0 transition-all duration-200 ${
+                    message.trim() && !isUploading
+                      ? "bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-lg hover:shadow-xl scale-100"
+                      : "bg-slate-300 scale-90"
+                  }`}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={`h-4 w-4 transition-transform duration-200 ${
+                      message.trim() ? "rotate-0" : "rotate-45"
+                    }`}
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                  </svg>
+                </Button>
+              </div>
+            </div>
+
+            {/* Typing indicator */}
+            {isTyping && (
+              <div className="absolute -top-6 left-4 text-xs text-slate-500 animate-fade-in">
+                Typing...
+              </div>
+            )}
+          </div>
         </div>
 
-        <Button
-          type="submit"
-          disabled={!message.trim() || isUploading}
-          className="h-10"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-          </svg>
-        </Button>
-      </div>
-    </form>
+        {/* Quick actions hint */}
+        <div className="flex items-center justify-between text-xs text-slate-500">
+          <div className="flex items-center gap-4">
+            <span>Press Enter to send, Shift+Enter for new line</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span>Supports:</span>
+            <div className="flex gap-1">
+              <span className="px-1.5 py-0.5 bg-slate-100 rounded text-xs">
+                Images
+              </span>
+              <span className="px-1.5 py-0.5 bg-slate-100 rounded text-xs">
+                Videos
+              </span>
+              <span className="px-1.5 py-0.5 bg-slate-100 rounded text-xs">
+                PDFs
+              </span>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
   );
 };
