@@ -120,6 +120,8 @@ class WebSocketService {
         data: payload,
       };
 
+      console.log("Sending message:", JSON.stringify(message)); // Debug log
+
       this.socket.send(JSON.stringify(message));
     } else {
       console.error("WebSocket is not connected");
